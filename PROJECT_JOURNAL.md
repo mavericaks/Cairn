@@ -268,7 +268,18 @@
   - CI verified green on first push: Build & Test (53s) + Docker Build (1m 57s) = 3m 1s total
   - No new dependencies introduced
 - **Decisions made:** Prod profile set via ENV in Dockerfile. Adopted new `jarmode=tools` syntax. PostgreSQL service container in CI (Option A — honest, not mocked). Used pgvector/pgvector:pg17 image. GitHub repo: mavericaks/Cairn.
-- **What was left incomplete:** E1-T7 through E1-T11 not yet started
-- **Next task:** E1-T7 — Write smoke test
+- **What was left incomplete:** E1-T8 through E1-T11 not yet started
+- **Next task:** E1-T9 — Create `railway.toml` deployment configuration
 
-
+#### E1-T7 Details (added to Session 2)
+- E1-T7 ✅ — Smoke tests with Testcontainers
+- ADR-008 written: Testcontainers for integration test database
+- **3 test classes, 10 tests, all passing:**
+  - `CairnApplicationTests` (4 tests): context load, app name, Flyway V1 migration (pgvector extension + domains table), virtual threads
+  - `ModuleStructureTests` (2 tests): Spring Modulith boundary verification (all 6 modules detected), architecture doc generation
+  - `LoggingConfigTests` (4 tests): Logback backend, file appender, context health, log file path
+- `TestcontainersConfig`: shared PostgreSQL+pgvector container via `@ServiceConnection`
+- CI migrated from service container to Testcontainers (Option B — single source of truth)
+- Hibernate explicit dialect removed (HHH90000025 fix — auto-detected since Hibernate 6.x)
+- CI green: Build & Test (49s) + Docker Build (1m 49s) = 2m 50s
+- Dependencies added (all test scope): `spring-boot-testcontainers`, `testcontainers-postgresql`, `testcontainers-junit-jupiter`, Testcontainers BOM 1.20.6
