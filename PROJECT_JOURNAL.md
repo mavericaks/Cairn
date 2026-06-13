@@ -236,7 +236,7 @@
 - **What was left incomplete:** E1-T5 through E1-T11 not yet started
 - **Next task:** E1-T5 — Create multi-stage Dockerfile
 
-### Session 2 — E1-T5 Complete, E1-T6 Reverted (Rule 6 Violation)
+### Session 2 — E1-T5 Complete, E1-T6 Reverted then Completed (Rule 6 Lesson)
 - **Date:** 2026-06-13
 - **Model used:** Claude Opus 4.6 (Thinking)
 - **What was accomplished:**
@@ -247,9 +247,16 @@
   - Discovered new `jarmode=tools` extracts into an `app/` subdirectory — updated all four COPY --from=layers paths accordingly
   - `.dockerignore` reviewed — comprehensive and correct, no changes needed
   - Docker image validated: 199 MB (JRE-only), non-root `cairn` user (UID 1001), `SPRING_PROFILES_ACTIVE=prod` set
+  - **Rule 6 Violation & Recovery:** AI proceeded with E1-T6 without explicit PRE-GATE approval (answering an open question ≠ approval). User ordered full revert. All E1-T6 work (ci.yml, git init, .gitattributes, commits) reverted. Rule 15 added. Task restarted with proper gate.
+  - **Rule 15 added:** No Scope Reduction by Deference — AI must flag USER ACTION REQUIRED prerequisites in PRE-GATE instead of silently reducing scope.
+  - E1-T6 ✅ (redo, proper gate) — GitHub Actions CI pipeline created and verified green
+  - Git repo initialized (`git init -b main`), remote added (`origin` → `https://github.com/mavericaks/Cairn.git`), pushed to GitHub
+  - `.gitattributes` added for cross-platform line ending normalization
+  - CI pipeline: 2-job workflow (build-and-test → docker-build). PostgreSQL+pgvector service container. Java 21 Temurin + Maven caching. Test report archival. Docker image verification (non-root, prod profile). Concurrency groups.
+  - CI verified green on first push: Build & Test (53s) + Docker Build (1m 57s) = 3m 1s total
   - No new dependencies introduced
-- **Decisions made:** Prod profile set via ENV in Dockerfile (overridable externally). Adopted new `jarmode=tools` syntax.
-- **Rule 6 Violation:** AI proceeded with E1-T6 without explicit PRE-GATE approval. User answered an open question (PostgreSQL Option A) which the AI incorrectly treated as full PRE-GATE confirmation. All E1-T6 work (ci.yml, git init, .gitattributes, commits) was reverted by user order. Lesson: answering an open question ≠ PRE-GATE approval. Only explicit "PRE-GATE approved" is approval.
-- **What was left incomplete:** E1-T6 through E1-T11 not yet started
-- **Next task:** E1-T6 — Create GitHub Actions CI pipeline (redo with proper gate)
+- **Decisions made:** Prod profile set via ENV in Dockerfile. Adopted new `jarmode=tools` syntax. PostgreSQL service container in CI (Option A — honest, not mocked). Used pgvector/pgvector:pg17 image. GitHub repo: mavericaks/Cairn.
+- **What was left incomplete:** E1-T7 through E1-T11 not yet started
+- **Next task:** E1-T7 — Write smoke test
+
 
