@@ -40,9 +40,9 @@ spring:
     open-in-view: false
     properties:
       hibernate:
-        # WHY: Explicit dialect avoids auto-detection overhead and ensures
-        # PostgreSQL-specific features (e.g., JSONB, array types) are available.
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # WHY: Hibernate auto-detects the dialect from the JDBC URL since Hibernate 6.x.
+        # Explicit dialect was removed to eliminate HHH90000025 deprecation warning.
+        # PostgreSQL-specific features (JSONB, array types) are available via auto-detection.
 
   # ── Flyway Schema Migrations (E1-T3) ────────────────────────────
   flyway:

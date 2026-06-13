@@ -47,6 +47,17 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <!-- WHY: BOM manages all Testcontainers module versions from a single source of truth.
+                 Spring Boot 3.5.x manages a compatible Testcontainers version via its parent POM,
+                 but explicit BOM import makes the version visible and overridable. (ADR-008) -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>1.20.6</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -141,6 +152,31 @@
         <dependency>
             <groupId>org.springframework.modulith</groupId>
             <artifactId>spring-modulith-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- WHY: Testcontainers integration with Spring Boot @ServiceConnection.
+             Auto-configures datasource properties from the test container — zero manual config.
+             Tests get a disposable PostgreSQL+pgvector DB that starts/stops automatically. (ADR-008) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- WHY: Testcontainers PostgreSQL module — provides PostgreSQLContainer class.
+             Version managed by testcontainers-bom. (ADR-008) -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- WHY: Testcontainers JUnit 5 integration — manages container lifecycle
+             (start before tests, stop after) via @Testcontainers + @Container annotations. (ADR-008) -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

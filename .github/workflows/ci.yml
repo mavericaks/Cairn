@@ -41,11 +41,10 @@ jobs:
   # Job 1: Build & Test
   # ═════════════════════════════════════════════════════════════════
   # WHY: Compiles the project and runs all tests against a real
-  # PostgreSQL database with pgvector. Flyway migrations run on
-  # startup, validating both the schema and the application wiring.
-  # Using a real DB (not H2 or mocks) ensures CI catches issues
-  # that only appear with PostgreSQL-specific features (pgvector,
-  # HNSW indexes, TIMESTAMPTZ, gen_random_uuid).
+  # PostgreSQL database with pgvector. Testcontainers (ADR-008)
+  # manages the database lifecycle — each test run spins up a
+  # disposable pgvector container automatically. No service
+  # container needed in CI; tests are fully self-contained.
   # ═════════════════════════════════════════════════════════════════
   build-and-test:
     name: Build & Test
@@ -53,34 +52,6 @@ jobs:
     # WHY: Timeout prevents runaway builds from consuming all CI minutes.
     # 15 minutes is generous for a Spring Boot build + test cycle.
     timeout-minutes: 15
-
-    # WHY: PostgreSQL service container provides a real database for
-    # Flyway migrations and JPA integration tests. pgvector/pgvector
-    # image includes the vector extension our V1 migration requires.
-    services:
-      postgres:
-        # WHY: pgvector/pgvector:pg17 includes PostgreSQL 17 with the
-        # pgvector extension pre-installed. Our V1 migration runs
-        # CREATE EXTENSION IF NOT EXISTS vector — this needs pgvector
-        # in the image, not just plain postgres.
-        image: pgvector/pgvector:pg17
-        env:
-          POSTGRES_DB: cairn_test
-          POSTGRES_USER: cairn
-          POSTGRES_PASSWORD: cairn_ci
-        ports:
-          # WHY: Map container port 5432 to host port 5432.
-          # The Spring app connects via localhost:5432 with env vars.
-          - 5432:5432
-        # WHY: Health check ensures PostgreSQL is ready to accept
-        # connections before any job steps run. Without this, the
-        # Maven build could start before PostgreSQL finishes initializing,
-        # causing Flyway migration failures.
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       # ── Checkout ────────────────────────────────────────────────
@@ -115,15 +86,9 @@ jobs:
       #            and performs all verification checks
       # -B = batch mode (no interactive download progress bars)
       # --fail-at-end = run all modules before failing (shows all errors)
+      # NOTE: No DB_URL/DB_USERNAME/DB_PASSWORD env vars needed —
+      # Testcontainers auto-configures the datasource via @ServiceConnection.
       - name: Build and run tests
-        env:
-          # WHY: Override Spring Boot datasource defaults to point at
-          # the PostgreSQL service container. These env vars match the
-          # ${DB_URL}, ${DB_USERNAME}, ${DB_PASSWORD} placeholders in
-          # application.yml (ADR-007, Rule 14).
-          DB_URL: jdbc:postgresql://localhost:5432/cairn_test
-          DB_USERNAME: cairn
-          DB_PASSWORD: cairn_ci
         run: ./mvnw clean verify -B --fail-at-end
 
       # ── Archive Test Reports ────────────────────────────────────

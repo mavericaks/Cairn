@@ -154,6 +154,15 @@
 - **Trade-offs:** Requires discipline — every new config value must be added to `.env.example` and Railway dashboard simultaneously.
 - **Files:** `.env.example` (E1-T10), `application.yml`
 
+### ADR-008: Testcontainers for Integration Test Database
+- **Date:** Session 2 (E1-T7)
+- **Decision:** Use Testcontainers to manage disposable PostgreSQL+pgvector containers during test execution. Tests manage their own database lifecycle — no external DB required.
+- **Alternatives:** (A) CI-only PostgreSQL service container with manual local setup, (B) H2 in-memory DB for tests (incompatible — pgvector extension doesn't exist in H2), (C) Shared Docker Compose DB for tests (stale state between runs)
+- **Reason:** Our Flyway V1 migration runs `CREATE EXTENSION IF NOT EXISTS vector` which requires real PostgreSQL+pgvector. Testcontainers provides identical DB behavior in CI, local dev, and IDE test runs. Spring Boot's `@ServiceConnection` auto-configures the datasource — zero manual config. Replaces the CI PostgreSQL service container for single source of truth.
+- **Trade-offs:** Requires Docker to be running during test execution. First test run downloads the pgvector Docker image (~400MB). Subsequent runs use cached image.
+- **Dependencies:** `spring-boot-testcontainers` (test scope), `org.testcontainers:postgresql` (test scope), `org.testcontainers:junit-jupiter` (test scope). All test-only — zero production impact.
+- **Files:** `src/test/java/com/cairn/TestcontainersConfig.java`, `pom.xml` (test deps)
+
 ---
 
 ## Dependency Registry
@@ -174,6 +183,9 @@
 | deep-java-library (MiniLM) | TBD | Local embeddings — deferred to Epic 2 | — | ADR-002 |
 | pgvector | TBD | Vector similarity extension — deferred to Epic 2 | — | ADR-002 |
 | spring-boot-starter-data-redis | managed | External domain context cache — decouples cache from JVM lifecycle (Epic 2) | Session 1 | ADR-004 |
+| spring-boot-testcontainers | managed (test) | Testcontainers + Spring Boot @ServiceConnection auto-config | E1-T7 | ADR-008 |
+| testcontainers-postgresql | managed (test) | PostgreSQL container module for Testcontainers | E1-T7 | ADR-008 |
+| testcontainers-junit-jupiter | managed (test) | JUnit 5 lifecycle integration for Testcontainers | E1-T7 | ADR-008 |
 
 ---
 
