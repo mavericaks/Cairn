@@ -4,8 +4,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -30,9 +33,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * PostgreSQL+pgvector container. Without this, the context would fail because
  * Flyway needs a real PostgreSQL database to run migrations.</p>
  *
+ * <p>WHY {@code webEnvironment = RANDOM_PORT}: Starts a real embedded Tomcat on a
+ * random port so we can make actual HTTP requests (e.g., health endpoint test).
+ * RANDOM_PORT avoids port conflicts when running tests in parallel.</p>
+ *
  * @author Cairn Team
  */
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestcontainersConfig.class)
 class CairnApplicationTests {
 
@@ -41,6 +48,9 @@ class CairnApplicationTests {
 
     @Autowired
     private DataSource dataSource;
+
+    @Autowired
+    private TestRestTemplate restTemplate;
 
     /**
      * WHY: Proves that the entire Spring Boot context loads without errors.
@@ -105,5 +115,31 @@ class CairnApplicationTests {
         String virtualEnabled = context.getEnvironment()
                 .getProperty("spring.threads.virtual.enabled");
         assertThat(virtualEnabled).isEqualTo("true");
+    }
+
+    /**
+     * WHY: Verifies the Actuator health endpoint responds with HTTP 200 and
+     * a JSON body containing "status":"UP". This is the exact endpoint Railway
+     * will probe for health checks (E1-T9, ADR-005).
+     *
+     * <p>This test catches:</p>
+     * <ul>
+     *     <li>Actuator not auto-configured (missing starter-actuator)</li>
+     *     <li>Health endpoint not exposed (misconfigured management.endpoints)</li>
+     *     <li>Database health indicator failing (datasource issues)</li>
+     * </ul>
+     */
+    @Test
+    @DisplayName("Actuator health endpoint returns UP (Railway health check)")
+    void actuatorHealthEndpointIsUp() {
+        ResponseEntity<String> response = restTemplate.getForEntity("/actuator/health", String.class);
+
+        assertThat(response.getStatusCode())
+                .as("Health endpoint should return 200 OK")
+                .isEqualTo(HttpStatus.OK);
+
+        assertThat(response.getBody())
+                .as("Health response should contain UP status")
+                .contains("\"status\":\"UP\"");
     }
 }

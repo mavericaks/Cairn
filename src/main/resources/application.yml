@@ -77,6 +77,26 @@ logging:
     # Locally, logs go to ./logs/cairn.log (gitignored).
     name: ${LOG_PATH:logs}/cairn.log
 
+# ── Actuator / Management (E1-T9) ────────────────────────────────
+# WHY: Spring Boot Actuator provides /actuator/health for Railway
+# health checks (ADR-005). Only health is exposed — all other endpoints
+# (env, beans, mappings, etc.) are disabled to minimize attack surface.
+# Epic 4 (Observability) will selectively enable more endpoints.
+management:
+  endpoints:
+    web:
+      exposure:
+        # WHY: Whitelist approach — only expose what's needed.
+        # 'health' is the only endpoint Railway needs.
+        # 'info' added for build metadata (useful in staging/debug).
+        include: health,info
+  endpoint:
+    health:
+      # WHY: Show full health details (disk, db, ping) to help
+      # diagnose issues in Railway logs. Only shown when probing
+      # the endpoint directly — not exposed in any UI.
+      show-details: always
+
 # ── Server ────────────────────────────────────────────────────────
 server:
   # WHY: Railway sets PORT env var. Locally defaults to 8080 (ADR-005, Rule 14).

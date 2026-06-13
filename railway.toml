@@ -1,0 +1,60 @@
+# ═══════════════════════════════════════════════════════════════════
+# Cairn Railway Deployment Configuration — E1-T9 (ADR-005)
+# ═══════════════════════════════════════════════════════════════════
+# WHY: Defines build and deployment settings as code — versioned alongside
+# the project. Settings here override Railway dashboard UI values,
+# ensuring deployment behavior is reproducible and reviewable in PRs.
+#
+# Railway stack: Spring Boot (this service) + PostgreSQL + Redis
+# All provisioned on Railway. Environment variables are set in the
+# Railway dashboard (DB_URL, DB_USERNAME, DB_PASSWORD, PORT, etc.).
+#
+# JSON schema for editor autocomplete:
+# https://railway.com/railway.schema.json
+# ═══════════════════════════════════════════════════════════════════
+
+[build]
+
+# WHY: Use our multi-stage Dockerfile (E1-T5) instead of Railway's Railpack.
+# Our Dockerfile is optimized: layered JAR extraction, JRE-only runtime,
+# non-root user, prod profile — all validated in CI (E1-T6).
+builder = "DOCKERFILE"
+
+# WHY: Explicit path for clarity. Railway defaults to "Dockerfile" at repo root,
+# but explicit is better than implicit for infrastructure config.
+dockerfilePath = "Dockerfile"
+
+# WHY: Only trigger redeployments when meaningful files change.
+# Prevents unnecessary deployments when docs, tests, or CI config change.
+# Keeps deployment credits/costs minimal on free tier.
+watchPatterns = [
+    "src/**",
+    "pom.xml",
+    "Dockerfile",
+    ".dockerignore",
+    "railway.toml"
+]
+
+[deploy]
+
+# WHY: Railway pings this endpoint to verify the service is healthy.
+# Spring Boot Actuator provides /actuator/health out of the box.
+# Returns {"status":"UP"} when the app + database are healthy.
+# Railway marks the deployment as failed if this doesn't respond 200.
+healthcheckPath = "/actuator/health"
+
+# WHY: 30 seconds is generous for Spring Boot cold start on free tier.
+# Our app starts in ~5-10s locally, but Railway free tier has slower I/O
+# and the first Flyway migration adds time. 30s provides safety margin.
+healthcheckTimeout = 30
+
+# WHY: Automatically restart the service if it crashes. ON_FAILURE means
+# Railway only restarts on non-zero exit codes — not on clean shutdowns.
+# 3 retries prevents infinite crash loops from burning deployment credits.
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# WHY: Single replica for demo/interview project on free tier.
+# Horizontal scaling is overkill and burns credits. Can be increased
+# for load testing or production use.
+numReplicas = 1

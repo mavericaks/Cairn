@@ -74,6 +74,15 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- WHY: Provides production-ready endpoints: /actuator/health for Railway
+             health checks (E1-T9), /actuator/info for build metadata (Epic 4).
+             Only health is exposed by default — all other endpoints are disabled
+             in application.yml to minimize attack surface. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- ═══════════════════════════════════════════════════════════
              Module Boundary Enforcement (ADR-001)
              ═══════════════════════════════════════════════════════════ -->
