@@ -186,6 +186,7 @@
 | spring-boot-testcontainers | managed (test) | Testcontainers + Spring Boot @ServiceConnection auto-config | E1-T7 | ADR-008 |
 | testcontainers-postgresql | managed (test) | PostgreSQL container module for Testcontainers | E1-T7 | ADR-008 |
 | testcontainers-junit-jupiter | managed (test) | JUnit 5 lifecycle integration for Testcontainers | E1-T7 | ADR-008 |
+| spring-boot-starter-actuator | managed | Production-ready endpoints (/actuator/health for Railway, /info for build metadata) | E1-T9 | ADR-005 |
 
 ---
 
@@ -283,3 +284,11 @@
 - Hibernate explicit dialect removed (HHH90000025 fix — auto-detected since Hibernate 6.x)
 - CI green: Build & Test (49s) + Docker Build (1m 49s) = 2m 50s
 - Dependencies added (all test scope): `spring-boot-testcontainers`, `testcontainers-postgresql`, `testcontainers-junit-jupiter`, Testcontainers BOM 1.20.6
+
+#### E1-T9 Details (added to Session 2)
+- E1-T9 ✅ — Railway deployment configuration
+- `railway.toml` created: DOCKERFILE builder, health check at /actuator/health (30s timeout), ON_FAILURE restart (3 retries), smart watchPatterns
+- `spring-boot-starter-actuator` added to pom.xml — health + info endpoints exposed (whitelist, show-details: always)
+- Actuator config in application.yml — minimal attack surface (only health + info)
+- Health endpoint smoke test added to CairnApplicationTests (HTTP 200 + status:UP) — 11 tests total, all passing
+- CI green: Build & Test (53s) + Docker Build (3m 19s)
