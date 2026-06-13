@@ -1,0 +1,42 @@
+# ═══════════════════════════════════════════════════════════════════
+# Cairn .dockerignore — E1-T5
+# ═══════════════════════════════════════════════════════════════════
+# WHY: Excludes files from the Docker build context. A smaller context
+# means faster `docker build` — Docker sends the entire context to
+# the daemon before any COPY instruction runs.
+# ═══════════════════════════════════════════════════════════════════
+
+# Build output (rebuilt inside Docker)
+target/
+
+# Version control
+.git/
+.gitignore
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+
+# Environment secrets
+.env
+
+# Runtime logs (generated, not source)
+logs/
+
+# Documentation (not needed in image)
+*.md
+LICENSE
+
+# Docker files (prevent recursive context)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Gemini workspace
+.gemini/

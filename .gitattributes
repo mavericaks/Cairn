@@ -1,0 +1,29 @@
+# ═══════════════════════════════════════════════════════════════════
+# Cairn .gitattributes — Line ending normalization (E1-T6)
+# ═══════════════════════════════════════════════════════════════════
+# WHY: Enforces consistent line endings across Windows/macOS/Linux.
+# Without this, Windows devs commit CRLF and break shell scripts
+# in Docker (Linux) and CI (Linux). `text=auto` normalizes to LF
+# in the repo, checks out native line endings on each OS.
+# ═══════════════════════════════════════════════════════════════════
+
+# Default: auto-detect text files and normalize to LF in repo
+* text=auto
+
+# WHY: Shell scripts must always be LF — CRLF breaks #!/bin/bash
+# interpretation on Linux (Docker, CI).
+*.sh text eol=lf
+mvnw text eol=lf
+
+# WHY: Batch files are Windows-only, CRLF is correct.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# WHY: Binary files must never be diff'd or line-ending converted.
+*.jar binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

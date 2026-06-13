@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- WHY: Spring Boot parent POM provides managed dependency versions, plugin defaults,
+         and sensible configuration. 3.5.15 is the latest GA on the 3.x line.
+         Spring AI 1.1.7 (our AI dependency) requires Boot 3.x — Boot 4.x needs AI 2.0 which is RC-only. -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.15</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+
+    <groupId>com.cairn</groupId>
+    <artifactId>cairn</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <name>Cairn</name>
+    <description>An extensible Spring Boot AI orchestration platform — each Epic adds one demonstrable enterprise capability to a stable, never-rewritten core</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <spring-modulith.version>1.4.12</spring-modulith.version>
+        <spring-ai.version>1.1.7</spring-ai.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- WHY: BOM manages all Spring Modulith module versions from a single source of truth.
+                 Prevents version mismatches when adding modulith-test, modulith-events, etc. (ADR-001) -->
+            <dependency>
+                <groupId>org.springframework.modulith</groupId>
+                <artifactId>spring-modulith-bom</artifactId>
+                <version>${spring-modulith.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- WHY: BOM manages all Spring AI module versions.
+                 Avoids version conflicts when adding model-specific starters later. (ADR-003) -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             Core Web Layer
+             ═══════════════════════════════════════════════════════════ -->
+
+        <!-- WHY: Provides embedded Tomcat + Spring MVC — the HTTP surface for all Cairn API endpoints.
+             Also pulls in spring-boot-starter-logging (Logback) transitively. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             Module Boundary Enforcement (ADR-001)
+             ═══════════════════════════════════════════════════════════ -->
+
+        <!-- WHY: Enforces hard module boundaries between routing, agents, tools, observability,
+             and security packages. Prevents cross-module coupling at compile time without
+             the operational overhead of microservices. Version managed by spring-modulith-bom. -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-core</artifactId>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             Data Access Layer
+             ═══════════════════════════════════════════════════════════ -->
+
+        <!-- WHY: JPA + Hibernate for database operations.
+             Actual datasource configuration is deferred to E1-T3 (Flyway + PostgreSQL). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- WHY: PostgreSQL JDBC driver. Runtime-only — no compile-time dependency on the driver.
+             Database container setup is handled in E1-T3. -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             Schema Migrations
+             ═══════════════════════════════════════════════════════════ -->
+
+        <!-- WHY: Flyway provides versioned, repeatable schema migrations — enterprise standard
+             for evolving DB schemas without manual SQL scripts. Configured in E1-T3. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
+        <!-- WHY: PostgreSQL-specific dialect support for Flyway.
+             Required since Flyway 10.x separated database-specific modules. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             AI Orchestration (ADR-003)
+             ═══════════════════════════════════════════════════════════ -->
+
+        <!-- WHY: Spring AI ChatClient with OpenAI-compatible API surface.
+             Pointed at Gemini's OpenAI-compatible endpoint via application config.
+             Version managed by spring-ai-bom. Auto-configuration disabled until Epic 2+.
+             Note: Renamed from spring-ai-openai-spring-boot-starter in Spring AI 1.1.x -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             Test Dependencies
+             ═══════════════════════════════════════════════════════════ -->
+
+        <!-- WHY: JUnit 5 + Mockito + Spring Test context — the standard test harness. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- WHY: Enables module isolation verification — tests that Spring Modulith
+             boundaries hold and modules don't leak dependencies. Used in E1-T7. -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- WHY: Creates executable JAR/WAR with embedded Tomcat.
+                 Also enables buildInfo() for Actuator /info endpoint (Epic 4). -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

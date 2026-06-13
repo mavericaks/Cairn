@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ═══════════════════════════════════════════════════════════════════
+  Cairn Logback Configuration — E1-T4
+  ═══════════════════════════════════════════════════════════════════
+  WHY: Structured JSON logging is an enterprise requirement for
+  log aggregation (Splunk, Datadog, ELK). This config provides:
+    - Console: readable in local dev, JSON in production
+    - File: always JSON with rotation for persistent audit trail
+
+  WHY logback-spring.xml (not logback.xml): The '-spring' suffix
+  enables <springProfile> tags for environment-specific config
+  and ensures Spring Boot processes this AFTER property resolution.
+  ═══════════════════════════════════════════════════════════════════
+-->
+<configuration scan="true" scanPeriod="30 seconds">
+
+    <!-- WHY: Inherits Spring Boot's default log patterns, colors, and
+         conversion rules. Without this, %clr() and other Spring-specific
+         patterns would not work. -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- WHY: Environment variable with default for log file path (Rule 14 / ADR-007).
+         Local dev: logs/ directory. Production: Railway sets LOG_PATH if needed. -->
+    <property name="LOG_PATH" value="${LOG_PATH:-logs}"/>
+    <property name="LOG_FILE" value="${LOG_PATH}/cairn.log"/>
+
+    <!-- WHY: Application name injected from Spring Boot config.
+         Used in structured log output for service identification. -->
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="cairn"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CONSOLE APPENDER — Local Development (readable)
+         ═══════════════════════════════════════════════════════════════
+         WHY: JSON is unreadable during local development. When no
+         'prod' profile is active, the console uses Spring Boot's
+         default human-readable pattern with colors. -->
+    <springProfile name="!prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <!-- WHY: Spring Boot's default pattern includes timestamp, level,
+                     PID, thread, logger name, and message. Colors aid scanning. -->
+                <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CONSOLE APPENDER — Production (JSON)
+         ═══════════════════════════════════════════════════════════════
+         WHY: In production (Railway/Docker), stdout is captured by
+         the container runtime and forwarded to log aggregators.
+         JSON format ensures every field is machine-parseable.
+         Uses Spring Boot 3.5.x built-in StructuredLogEncoder —
+         no external dependency (logstash-logback-encoder) needed. -->
+    <springProfile name="prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="org.springframework.boot.logging.logback.StructuredLogEncoder">
+                <!-- WHY: 'logstash' format is the most widely supported by
+                     Splunk, Datadog, ELK, and Loki. Compatible with the
+                     journal's stated requirement for Splunk/Datadog. -->
+                <format>logstash</format>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         FILE APPENDER — Always JSON with rotation
+         ═══════════════════════════════════════════════════════════════
+         WHY: File output provides a persistent audit trail regardless
+         of console configuration. Always JSON for machine parsing.
+         Rotation prevents disk exhaustion in long-running deployments. -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+
+        <encoder class="org.springframework.boot.logging.logback.StructuredLogEncoder">
+            <format>logstash</format>
+        </encoder>
+
+        <!-- WHY: SizeAndTimeBasedRollingPolicy combines daily rotation with
+             per-file size limits. This prevents any single log file from
+             becoming too large to process while maintaining daily boundaries. -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- WHY: Pattern includes date for daily rotation and index (%i)
+                 for size-based splits within a day. .gz compression reduces
+                 disk usage ~90% for text logs. -->
+            <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.%i.json.gz</fileNamePattern>
+
+            <!-- WHY: 10MB keeps individual files manageable for grep/tail.
+                 Large enough to avoid excessive rotation churn. -->
+            <maxFileSize>10MB</maxFileSize>
+
+            <!-- WHY: 30 days provides sufficient history for debugging
+                 production incidents without unbounded growth. -->
+            <maxHistory>30</maxHistory>
+
+            <!-- WHY: 1GB hard cap is a safety net. Even if rotation fails
+                 to clean up, disk usage is bounded. -->
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         LOG LEVELS
+         ═══════════════════════════════════════════════════════════════ -->
+
+    <!-- WHY: Cairn application code at DEBUG level gives full visibility
+         during development. Doesn't affect production noise because
+         production log aggregators can filter by level. -->
+    <logger name="com.cairn" level="DEBUG"/>
+
+    <!-- WHY: See actual SQL queries during development. Invaluable for
+         debugging N+1 queries and verifying Hibernate behavior.
+         Only active in local profile to avoid production log noise. -->
+    <springProfile name="!prod">
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+    </springProfile>
+    <springProfile name="prod">
+        <logger name="org.hibernate.SQL" level="WARN"/>
+    </springProfile>
+
+    <!-- WHY: Flyway migration logging at INFO shows which migrations
+         ran and in what order — critical for debugging schema issues. -->
+    <logger name="org.flywaydb" level="INFO"/>
+
+    <!-- WHY: Spring framework at INFO avoids the firehose of DEBUG-level
+         Spring internals while still showing startup and config events. -->
+    <logger name="org.springframework" level="INFO"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         ROOT LOGGER
+         ═══════════════════════════════════════════════════════════════
+         WHY: Both CONSOLE and FILE are always attached. Console format
+         varies by profile (readable vs JSON), file is always JSON. -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>

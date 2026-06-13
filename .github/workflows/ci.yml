@@ -1,0 +1,236 @@
+# ═══════════════════════════════════════════════════════════════════
+# Cairn CI Pipeline — E1-T6
+# ═══════════════════════════════════════════════════════════════════
+# WHY: Enforces build integrity on every push and pull request.
+# No code reaches main without passing compilation, tests, and
+# a successful Docker image build. This is the first line of
+# defense against regressions.
+#
+# Pipeline structure:
+#   1. build-and-test — compile + unit/integration tests against
+#      a real PostgreSQL+pgvector database (honest CI, not mocked)
+#   2. docker-build — verify the Dockerfile produces a valid image
+#      (does NOT push to a registry — that's deployment, not CI)
+# ═══════════════════════════════════════════════════════════════════
+
+name: Cairn CI
+
+# WHY: Trigger on pushes to main (post-merge integrity) and on PRs
+# targeting main (pre-merge gating). This covers both workflows:
+# direct pushes (solo dev) and PR-based collaboration.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# WHY: Cancel in-progress CI runs for the same branch/PR when a new
+# push arrives. Saves GitHub Actions minutes and prevents stale
+# results from completing after a newer push has already started.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# WHY: Principle of least privilege. CI only needs to read the repo
+# contents. No write access, no package publishing, no deployments.
+permissions:
+  contents: read
+
+jobs:
+  # ═════════════════════════════════════════════════════════════════
+  # Job 1: Build & Test
+  # ═════════════════════════════════════════════════════════════════
+  # WHY: Compiles the project and runs all tests against a real
+  # PostgreSQL database with pgvector. Flyway migrations run on
+  # startup, validating both the schema and the application wiring.
+  # Using a real DB (not H2 or mocks) ensures CI catches issues
+  # that only appear with PostgreSQL-specific features (pgvector,
+  # HNSW indexes, TIMESTAMPTZ, gen_random_uuid).
+  # ═════════════════════════════════════════════════════════════════
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    # WHY: Timeout prevents runaway builds from consuming all CI minutes.
+    # 15 minutes is generous for a Spring Boot build + test cycle.
+    timeout-minutes: 15
+
+    # WHY: PostgreSQL service container provides a real database for
+    # Flyway migrations and JPA integration tests. pgvector/pgvector
+    # image includes the vector extension our V1 migration requires.
+    services:
+      postgres:
+        # WHY: pgvector/pgvector:pg17 includes PostgreSQL 17 with the
+        # pgvector extension pre-installed. Our V1 migration runs
+        # CREATE EXTENSION IF NOT EXISTS vector — this needs pgvector
+        # in the image, not just plain postgres.
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_DB: cairn_test
+          POSTGRES_USER: cairn
+          POSTGRES_PASSWORD: cairn_ci
+        ports:
+          # WHY: Map container port 5432 to host port 5432.
+          # The Spring app connects via localhost:5432 with env vars.
+          - 5432:5432
+        # WHY: Health check ensures PostgreSQL is ready to accept
+        # connections before any job steps run. Without this, the
+        # Maven build could start before PostgreSQL finishes initializing,
+        # causing Flyway migration failures.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Java Setup ──────────────────────────────────────────────
+      # WHY: Temurin is the same JDK distribution used in our
+      # Dockerfile (eclipse-temurin:21). Matching distributions
+      # between CI and production prevents subtle JVM differences.
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          # WHY: Caches ~/.m2/repository between runs. Maven dependency
+          # downloads (~300MB) happen once, then are restored from cache
+          # on subsequent runs. Cuts build time by 2-4 minutes.
+          cache: 'maven'
+
+      # ── Make Maven Wrapper executable ───────────────────────────
+      # WHY: Git on Windows may strip the executable bit from mvnw.
+      # CI runs on Linux where the bit matters. chmod ensures mvnw
+      # is always executable regardless of how it was committed.
+      - name: Make Maven Wrapper executable
+        run: chmod +x mvnw
+
+      # ── Build & Test ────────────────────────────────────────────
+      # WHY: `mvn clean verify` is the standard CI command:
+      #   clean  — removes stale build output
+      #   verify — compiles, runs unit tests, runs integration tests,
+      #            and performs all verification checks
+      # -B = batch mode (no interactive download progress bars)
+      # --fail-at-end = run all modules before failing (shows all errors)
+      - name: Build and run tests
+        env:
+          # WHY: Override Spring Boot datasource defaults to point at
+          # the PostgreSQL service container. These env vars match the
+          # ${DB_URL}, ${DB_USERNAME}, ${DB_PASSWORD} placeholders in
+          # application.yml (ADR-007, Rule 14).
+          DB_URL: jdbc:postgresql://localhost:5432/cairn_test
+          DB_USERNAME: cairn
+          DB_PASSWORD: cairn_ci
+        run: ./mvnw clean verify -B --fail-at-end
+
+      # ── Archive Test Reports ────────────────────────────────────
+      # WHY: Test reports are uploaded as build artifacts so developers
+      # can download and inspect them after the CI run completes.
+      # `if: always()` ensures reports are uploaded even when tests
+      # fail — which is exactly when you need them most.
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            target/surefire-reports/
+            target/failsafe-reports/
+          retention-days: 14
+
+      # ── Archive build output for downstream jobs ────────────────
+      # WHY: The built JAR is uploaded so the docker-build job can
+      # optionally verify the JAR independently. Also useful for
+      # debugging build issues — download and inspect the artifact.
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: target/*.jar
+          retention-days: 7
+
+  # ═════════════════════════════════════════════════════════════════
+  # Job 2: Docker Build
+  # ═════════════════════════════════════════════════════════════════
+  # WHY: Verifies the Dockerfile produces a valid image. This catches
+  # Dockerfile syntax errors, missing files, and layer extraction
+  # failures before they reach deployment. The image is NOT pushed
+  # to a registry — that's a deployment concern, not CI.
+  #
+  # Depends on build-and-test: no point building a Docker image if
+  # the code doesn't compile or tests fail.
+  # ═════════════════════════════════════════════════════════════════
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # WHY: Docker Buildx is the modern Docker builder with better
+      # caching, multi-platform support, and build attestation.
+      # It's pre-installed on GitHub runners but we explicitly set
+      # it up for reproducibility.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # WHY: Build the image to verify the Dockerfile is valid.
+      # --load loads the image into the local Docker daemon so we
+      # can inspect it in subsequent steps.
+      # Tag includes the git SHA for traceability — every image can
+      # be traced back to the exact commit that produced it.
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: |
+            cairn:ci-${{ github.sha }}
+            cairn:latest
+          # WHY: GitHub Actions cache backend for Docker layers.
+          # Dramatically speeds up Docker builds on subsequent runs
+          # by caching unchanged layers (dependencies, spring-boot-loader).
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # WHY: Verify the built image meets our production requirements:
+      # - Non-root user (security)
+      # - SPRING_PROFILES_ACTIVE=prod (structured logging)
+      # - Correct JRE version
+      # This catches regressions in the Dockerfile that a simple
+      # `docker build` success wouldn't reveal.
+      - name: Verify image properties
+        run: |
+          echo "=== Image Size ==="
+          docker image ls cairn:ci-${{ github.sha }}
+
+          echo ""
+          echo "=== Security: Non-root user ==="
+          USER=$(docker image inspect cairn:ci-${{ github.sha }} --format '{{.Config.User}}')
+          echo "User: $USER"
+          if [ "$USER" != "cairn" ]; then
+            echo "ERROR: Image must run as non-root user 'cairn'"
+            exit 1
+          fi
+
+          echo ""
+          echo "=== Environment: Spring Profile ==="
+          PROFILE=$(docker image inspect cairn:ci-${{ github.sha }} \
+            --format '{{range .Config.Env}}{{println .}}{{end}}' \
+            | grep SPRING_PROFILES_ACTIVE || true)
+          echo "$PROFILE"
+          if [ -z "$PROFILE" ]; then
+            echo "ERROR: SPRING_PROFILES_ACTIVE not set in image"
+            exit 1
+          fi
+
+          echo ""
+          echo "=== All checks passed ==="

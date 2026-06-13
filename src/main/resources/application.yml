@@ -1,0 +1,83 @@
+# ═══════════════════════════════════════════════════════════════════
+# Cairn Application Configuration
+# ═══════════════════════════════════════════════════════════════════
+# WHY: Centralized, externalized configuration. Each section is owned
+# by its respective task/Epic. Do NOT inline configuration in Java
+# classes — Spring Boot's property binding makes this the single
+# source of truth for runtime behavior.
+# ═══════════════════════════════════════════════════════════════════
+
+spring:
+  application:
+    # WHY: Named for service discovery, logging correlation, and Actuator identification.
+    name: cairn
+
+  # WHY: Java 21 Virtual Threads provide lightweight concurrency for agent orchestration
+  # without the complexity of reactive programming. Enables Loom-backed @Async and
+  # Tomcat request handling. Preparation for Epic 3 (Agent Swarm).
+  threads:
+    virtual:
+      enabled: true
+
+  # ── Database (E1-T3) ────────────────────────────────────────────
+  # WHY: All connection values are environment variables with local defaults (ADR-007, Rule 14).
+  # Local dev: defaults point to localhost:5432/cairn (docker-compose from E1-T11).
+  # Production: Railway sets DB_URL, DB_USERNAME, DB_PASSWORD automatically.
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/cairn}
+    username: ${DB_USERNAME:cairn}
+    password: ${DB_PASSWORD:cairn}
+    # WHY: HikariCP is the default pool. Driver class auto-detected from URL.
+
+  # ── JPA / Hibernate (E1-T3) ─────────────────────────────────────
+  jpa:
+    hibernate:
+      # WHY: 'validate' because Flyway owns ALL schema evolution.
+      # Hibernate only verifies entity mappings match the DB — never modifies DDL.
+      ddl-auto: validate
+    # WHY: open-in-view is an anti-pattern. It keeps Hibernate sessions open during
+    # view rendering, hiding lazy-loading N+1 bugs. Disabled from day one.
+    open-in-view: false
+    properties:
+      hibernate:
+        # WHY: Explicit dialect avoids auto-detection overhead and ensures
+        # PostgreSQL-specific features (e.g., JSONB, array types) are available.
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # ── Flyway Schema Migrations (E1-T3) ────────────────────────────
+  flyway:
+    # WHY: Flyway provides versioned, repeatable schema migrations.
+    # Enterprise standard for DB evolution — every schema change is a tracked file.
+    enabled: true
+    # WHY: Standard Maven/Gradle resource location for migration SQL files.
+    locations: classpath:db/migration
+
+  # ── Spring AI (Epic 2+ will configure) ──────────────────────────
+  # ai.openai configuration deferred to Epic 2.
+
+  # WHY: Exclude auto-configurations for subsystems not yet wired.
+  # DB exclusions removed in E1-T3 (datasource/JPA/Flyway now configured).
+  # Spring AI exclusions remain until Epic 2 provides API keys.
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
+
+# ── Logging (E1-T4) ───────────────────────────────────────────────
+# WHY: File path externalized as env var (Rule 14 / ADR-007).
+# Full logging config lives in logback-spring.xml (profile-based
+# console switching, JSON file output with rotation).
+logging:
+  file:
+    # WHY: Env var with default. Railway can override LOG_PATH.
+    # Locally, logs go to ./logs/cairn.log (gitignored).
+    name: ${LOG_PATH:logs}/cairn.log
+
+# ── Server ────────────────────────────────────────────────────────
+server:
+  # WHY: Railway sets PORT env var. Locally defaults to 8080 (ADR-005, Rule 14).
+  port: ${PORT:8080}
