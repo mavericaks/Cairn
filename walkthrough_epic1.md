@@ -73,10 +73,39 @@ We created a 3-stage Dockerfile (`builder` -> `layers` -> `runtime`).
 * **Why:** Spring Boot creates "Fat JARs" that bundle all dependencies. If you change one line of code, Docker would normally have to upload a 50MB+ image. By using Spring Boot's layer tools, our Dockerfile separates dependencies (which rarely change) from application code (which changes often).
 * **Result:** Blazing fast Docker builds and minimal storage overhead, packaged securely in an Alpine JRE container running as a non-root user.
 
-### The GitHub Actions Pipeline (CI)
-Our `ci.yml` runs on every pull request and push to `main`.
-* **Why:** It enforces a strict gate. Before code is merged, CI spins up a fresh Ubuntu machine, downloads PostgreSQL via Testcontainers, runs all our tests, and verifies the Dockerfile builds successfully.
-* **Rule 15:** This step birthed "Rule 15" — if an action is required by the user (like creating a repo), the AI must flag it upfront.
+### The Role and Complete Working of Git CI/CD
+Continuous Integration and Continuous Deployment (CI/CD) is the beating heart of a modern software project. It acts as an automated, impartial judge that verifies every single line of code before it is allowed into the main project.
+
+#### What is it in our context?
+In Cairn, our CI/CD is powered by **GitHub Actions** (`.github/workflows/ci.yml`). Whenever code is pushed to GitHub, GitHub provisions a temporary, sterile, Ubuntu virtual machine in the cloud and executes a predefined set of instructions. 
+
+#### Why do we need it?
+1. **The "It Works on My Machine" Problem:** Developers often have local configurations, cached dependencies, or background services running that hide bugs. The CI machine is a blank slate. If it compiles and passes tests there, it is objectively correct.
+2. **The Impermeable Gate:** Human reviewers miss things. CI does not. It enforces that broken code *cannot* be merged into the `main` branch. 
+3. **Reproducibility:** CI proves that the project can be built from scratch using only what is in the Git repository.
+
+#### How does it work step-by-step in Cairn?
+Our `ci.yml` is split into two sequential "Jobs":
+
+**Job 1: Build and Test (`build-and-test`)**
+This job focuses on proving the Java code is valid.
+1. **Checkout Code:** Downloads the Cairn repository to the fresh Ubuntu runner.
+2. **Setup Java 21:** Installs the exact JDK version (Eclipse Temurin) we use locally.
+3. **Cache Maven Dependencies:** To speed up builds, it restores previously downloaded `.jar` files from GitHub's cache so we don't redownload the internet every run.
+4. **Run Maven Verify:** This is the core command (`./mvnw verify -B`). It compiles the code and runs the test suite.
+5. **Testcontainers Magic:** As the tests run, our code requests a PostgreSQL database. Testcontainers intercepts this, downloads the `pgvector/pgvector:pg17` image, spins up the database *inside the CI runner*, runs Flyway migrations against it, executes our tests, and then securely destroys the container. 
+6. **Publish Test Report:** If any tests fail, the workflow stops immediately and highlights the exact failing test.
+
+**Job 2: Docker Build Verification (`docker-build`)**
+This job only runs if Job 1 succeeds. It proves that the application can be successfully packaged for production.
+1. **Checkout Code:** Again, grabs the code.
+2. **Docker Build:** It runs `docker build -t cairn:ci-test .`. This proves that our multi-stage `Dockerfile` is valid, that the `builder` stage successfully extracts the Spring Boot layered JAR, and that the final Alpine JRE runtime image can be created without errors.
+
+#### The CD (Continuous Deployment) Handoff
+While GitHub Actions handles the **CI** (Integration & Testing), Railway handles our **CD** (Deployment). Because we proved in CI that the Dockerfile builds successfully, Railway confidently monitors the `main` branch. When a commit passes CI and lands on `main`, Railway automatically pulls the code, runs the exact same Dockerfile build, and deploys it live to the internet with zero downtime.
+
+#### Rule 15 Origin
+The process of setting up this pipeline birthed **Rule 15**. Because setting up CI required creating the actual GitHub repository and pushing the code (actions an AI cannot autonomously perform without user credentials), we established the rule that prerequisites requiring human action must be flagged aggressively in the `PRE-GATE`.
 
 ### Railway Deployment & Local Parity
 We chose Railway (ADR-005) for production hosting due to its excellent support for Spring Boot, PostgreSQL, and Redis in a single unified dashboard, with auto-deployments from GitHub.
