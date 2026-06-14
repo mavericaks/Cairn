@@ -292,3 +292,10 @@
 - Actuator config in application.yml — minimal attack surface (only health + info)
 - Health endpoint smoke test added to CairnApplicationTests (HTTP 200 + status:UP) — 11 tests total, all passing
 - CI green: Build & Test (53s) + Docker Build (3m 19s)
+
+#### E1-T10 Details (added to Session 2)
+- E1-T10 ✅ — `.env.example` with all environment variable keys
+- 3 required vars (DB_URL, DB_USERNAME, DB_PASSWORD), 3 optional (PORT, LOG_PATH, SPRING_PROFILES_ACTIVE), 3 future (OPENAI_API_KEY, OPENAI_BASE_URL, REDIS_URL)
+- Each var has format example, Railway behavior note, and ADR/task cross-reference
+- `.env` confirmed in `.gitignore` (E1-T4)
+- No code changes, no tests needed — documentation file only

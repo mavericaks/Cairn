@@ -32,7 +32,7 @@
 | E1-T6 | Create GitHub Actions CI pipeline (`ci.yml` — build, test, Docker build on every PR) | ✅ |
 | E1-T7 | Write smoke test: ApplicationContext loads, modules are isolated, logging outputs JSON | ✅ |
 | E1-T9 | Create `railway.toml` deployment configuration (ADR-005) | ✅ |
-| E1-T10 | Create `.env.example` with all required environment variable keys (ADR-007) | ⚪ |
+| E1-T10 | Create `.env.example` with all required environment variable keys (ADR-007) | ✅ |
 | E1-T11 | Create `docker-compose.yml` for local dev environment (Spring Boot + PostgreSQL + Redis) mirroring Railway stack (ADR-005) | ⚪ |
 | E1-T8 | Write `walkthrough_epic1.md` | ⚪ |
 
@@ -94,6 +94,7 @@
 | E1-T6 | Create GitHub Actions CI pipeline (ci.yml — build, test, Docker build) | 2026-06-13 | 2-job workflow: build-and-test (pgvector/pgvector:pg17, Maven caching, test reports) → docker-build (image verification). Git init + remote (mavericaks/Cairn). .gitattributes added. CI green on first push (3m 1s). Rule 15 born from this task. |
 | E1-T7 | Write smoke tests (context, modules, logging) with Testcontainers | 2026-06-13 | 3 classes, 10 tests. CairnApplicationTests (context, Flyway, pgvector), ModuleStructureTests (6 modules verified), LoggingConfigTests (Logback, file appender). Testcontainers @ServiceConnection (ADR-008). CI migrated from service container to Testcontainers. |
 | E1-T9 | Create railway.toml deployment configuration (ADR-005) | 2026-06-13 | DOCKERFILE builder, /actuator/health check (30s), ON_FAILURE restart (3 retries), smart watchPatterns. Actuator added (health+info only). Health endpoint smoke test. 11 tests total. |
+| E1-T10 | Create .env.example with all env var keys (ADR-007) | 2026-06-14 | 3 required (DB_*), 3 optional (PORT, LOG_PATH, SPRING_PROFILES_ACTIVE), 3 future (OPENAI_*, REDIS_URL). Format examples, Railway notes, ADR cross-refs. |
 
 ---
 
