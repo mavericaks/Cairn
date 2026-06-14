@@ -1,0 +1,64 @@
+# ═══════════════════════════════════════════════════════════════════
+# Cairn Local Development Environment (E1-T11, ADR-005)
+# ═══════════════════════════════════════════════════════════════════
+# WHY: This mirrors the Railway production stack locally, providing
+# the backing services (PostgreSQL + Redis) needed to run the Spring
+# Boot application.
+#
+# HOW TO USE:
+#   1. Start services:  docker compose up -d
+#   2. Stop services:   docker compose down
+#   3. Destroy data:    docker compose down -v
+#
+# The Spring Boot app itself is NOT included here. Run it from your
+# IDE or via `./mvnw spring-boot:run`. It will connect to these
+# services using the default credentials in application.yml.
+# ═══════════════════════════════════════════════════════════════════
+
+services:
+  # ── PostgreSQL + pgvector ─────────────────────────────────────────
+  # WHY: Primary datastore and vector database.
+  # Using pgvector/pgvector:pg17 to match the CI environment and ensure
+  # Flyway migration V1 (which runs CREATE EXTENSION vector) succeeds.
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: cairn-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: cairn
+      POSTGRES_USER: cairn
+      POSTGRES_PASSWORD: cairn
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cairn"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ─────────────────────────────────────────────────────────
+  # WHY: Cache layer for domain context (Epic 2, ADR-004).
+  # Lightweight alpine image.
+  redis:
+    image: redis:7-alpine
+    container_name: cairn-redis
+    ports:
+      - "6379:6379"
+    # WHY: Require a password to mirror production environments,
+    # even though this is just local dev.
+    command: redis-server --requirepass password
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+# ── Volumes ───────────────────────────────────────────────────────
+# WHY: Named volumes ensure database and cache data survive when
+# containers are stopped or recreated.
+volumes:
+  postgres-data:
+  redis-data:

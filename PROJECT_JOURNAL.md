@@ -299,3 +299,12 @@
 - Each var has format example, Railway behavior note, and ADR/task cross-reference
 - `.env` confirmed in `.gitignore` (E1-T4)
 - No code changes, no tests needed — documentation file only
+
+#### E1-T11 Details (added to Session 2)
+- E1-T11 ✅ — `docker-compose.yml` for local dev environment
+- Mirrors the Railway production stack locally
+- Defined `postgres` service using `pgvector/pgvector:pg17` (matches CI and prod) on port 5432
+- Defined `redis` service using `redis:7-alpine` on port 6379 with requirepass (password)
+- Named volumes configured for both `postgres-data` and `redis-data` to ensure persistence
+- Both services have healthchecks
+- App is deliberately excluded from compose to allow local IDE/Maven running
