@@ -34,7 +34,7 @@
 | E1-T9 | Create `railway.toml` deployment configuration (ADR-005) | ✅ |
 | E1-T10 | Create `.env.example` with all required environment variable keys (ADR-007) | ✅ |
 | E1-T11 | Create `docker-compose.yml` for local dev environment (Spring Boot + PostgreSQL + Redis) mirroring Railway stack (ADR-005) | ✅ |
-| E1-T8 | Write `walkthrough_epic1.md` | ⚪ |
+| E1-T8 | Write `walkthrough_epic1.md` | ✅ |
 
 ---
 
@@ -96,6 +96,7 @@
 | E1-T9 | Create railway.toml deployment configuration (ADR-005) | 2026-06-13 | DOCKERFILE builder, /actuator/health check (30s), ON_FAILURE restart (3 retries), smart watchPatterns. Actuator added (health+info only). Health endpoint smoke test. 11 tests total. |
 | E1-T10 | Create .env.example with all env var keys (ADR-007) | 2026-06-14 | 3 required (DB_*), 3 optional (PORT, LOG_PATH, SPRING_PROFILES_ACTIVE), 3 future (OPENAI_*, REDIS_URL). Format examples, Railway notes, ADR cross-refs. |
 | E1-T11 | Create docker-compose.yml for local dev | 2026-06-14 | Postgres (pgvector/pgvector:pg17) and Redis (redis:7-alpine). Named volumes and healthchecks for both. Spring Boot app excluded from compose for IDE running. |
+| E1-T8 | Write walkthrough_epic1.md | 2026-06-14 | Extensive architectural deep-dive into Epic 1. Explained the "Why" for Java 21, Modulith, PostgreSQL, pgvector, Flyway, and infrastructure. |
 
 ---
 

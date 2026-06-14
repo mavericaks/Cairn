@@ -308,3 +308,10 @@
 - Named volumes configured for both `postgres-data` and `redis-data` to ensure persistence
 - Both services have healthchecks
 - App is deliberately excluded from compose to allow local IDE/Maven running
+
+#### E1-T8 Details (added to Session 2)
+- E1-T8 ✅ — `walkthrough_epic1.md` written
+- Comprehensive retrospective of Epic 1
+- Documented "The Why" for Java 21, Spring Modulith, PostgreSQL, pgvector, Flyway, and Testcontainers
+- Explained the CI/CD pipeline, multi-stage Dockerfile, and local parity
+- Epic 1 is now 100% complete
