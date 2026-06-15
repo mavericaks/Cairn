@@ -78,12 +78,12 @@
 | Epic | Title | Capability Demonstrated | Status |
 |------|-------|------------------------|--------|
 | 1 | The Foundation | Spring Modulith structure, Flyway migrations, CI/CD pipeline, structured logging, Docker | ⚪ NOT STARTED |
-| 2 | The Semantic Kernel | pgvector + MiniLM local embeddings + HNSW semantic routing + Redis context cache between domain selection and LLM call | ⚪ NOT STARTED |
+| 2 | The Semantic Kernel | pgvector + MiniLM local embeddings + HNSW semantic routing + Redis context cache | 🟢 ACTIVE |
 | 3 | The Agent Swarm | Virtual Thread agent orchestration, SwarmAgent interface, first real agent | ⚪ NOT STARTED |
 | 4 | Observability | Micrometer + Actuator metrics, structured event bus, live dashboard panel | ⚪ NOT STARTED |
 | 5 | Agentic Tools (Safe) | Spring AI function calling with HITL gate, sandboxed file system tools | ⚪ NOT STARTED |
 | 6 | Security Hardening | JWT auth, Spring Security, HITL approval API for destructive agent actions | ⚪ NOT STARTED |
-| 7 | Multi-Model Routing | Tri-model strategy (Gemini/Groq/Mistral), model selection logic in router | ⚪ NOT STARTED |
+| 7 | The LoRA Swarm | Multi-model orchestration of 6 domain-specific fine-tuned local GGUF models via Ollama dynamic loading | ⚪ NOT STARTED |
 | 8+ | [User-approved additions] | [Defined when we get here] | ⚪ FUTURE |
 
 > **Note:** Epics 1-7 are the spine. Each one is a real interview talking point.
@@ -162,7 +162,23 @@
 - **Trade-offs:** Requires Docker to be running during test execution. First test run downloads the pgvector Docker image (~400MB). Subsequent runs use cached image.
 - **Dependencies:** `spring-boot-testcontainers` (test scope), `org.testcontainers:postgresql` (test scope), `org.testcontainers:junit-jupiter` (test scope). All test-only — zero production impact.
 - **Files:** `src/test/java/com/cairn/TestcontainersConfig.java`, `pom.xml` (test deps)
+### ADR-009: Domain-Specific LLM Swarm (Ollama + Student Cloud)
+- **Date:** Session 3 (Pre-Epic 2 Planning)
+- **Decision:** Shift from cloud API routing (Gemini/Groq) to a 100% private, locally orchestrated swarm of 6 distinct small models (e.g., Qwen-Math, Phi-3, Hermes) running via Ollama dynamic loading on a constrained 4GB VRAM GPU. Fine-tuning will occur on cloud GPUs funded by .edu Student Pack credits (AWS/Azure) using Unsloth, exported as quantized GGUFs for local inference.
+- **Alternatives:** Hosting 6 LoRAs in the cloud (violates budget), using generic APIs (lacks ML engineering depth).
+- **Reason:** Demonstrates profound ML engineering depth (LoRA, quantization, orchestration) while adhering to strict local hardware limits (4GB VRAM only allows sequential dynamic loading) and $0 ongoing hosting costs.
+- **Trade-offs:** 1-3 second latency penalty when Ollama swaps models in/out of constrained VRAM.
 
+### ADR-010: The 6 Foundational Semantic Domains
+- **Date:** Session 3 (Pre-Epic 2 Planning)
+- **Decision:** Define exactly 6 foundational domains for intent classification: `system`, `conversational`, `discovery`, `execution`, `generative`, and `analytical`.
+- **Reason:** A minimal, collectively exhaustive taxonomy that covers every possible enterprise AI prompt format. Provides the target labels for the Epic 2 Semantic Router.
+
+### ADR-011: DomainSeeder ApplicationRunner
+- **Date:** Session 3 (Pre-Epic 2 Planning)
+- **Decision:** Seed foundational domains into PostgreSQL at application startup using a Java `ApplicationRunner` (`DomainSeeder`) rather than a raw Flyway SQL script.
+- **Alternatives:** Flyway V2 migration for `INSERT INTO domains...`
+- **Reason:** The `domains` table requires a 384-dimensional vector `embedding`. Raw SQL cannot calculate embeddings from text descriptions. The `DomainSeeder` injects the domains by calling `LocalEmbeddingService` at startup to accurately compute the 384-dim vectors before persisting via JPA/JDBC.
 ---
 
 ## Dependency Registry
@@ -215,6 +231,7 @@
 | Project restart | Rules 0-13 established | Clean restart of Cairn |
 | 2026-06-12 | Rule 14 added | Enforce env vars for all credentials/URLs/env-specific values (ADR-007) |
 | 2026-06-13 | Rule 15 added | No Scope Reduction by Deference — AI must ask for user prerequisites in PRE-GATE, not silently reduce task scope. Born from E1-T6 revert (Session 2). |
+| 2026-06-15 | Rule 16 added | Production-Grade First — Enforces handling of edge cases, graceful degradation on infrastructure failure, and metrics tracking from day one. Born from user rejection of E2-T1 happy-path implementation (Session 3). |
 
 ---
 
@@ -315,3 +332,18 @@
 - Documented "The Why" for Java 21, Spring Modulith, PostgreSQL, pgvector, Flyway, and Testcontainers
 - Explained the CI/CD pipeline, multi-stage Dockerfile, and local parity
 - Epic 1 is now 100% complete
+- Epic 1 is now 100% complete
+
+### Session 3 — The Swarm Pivot & Epic 2 Activation
+- **Date:** 2026-06-15
+- **Model used:** Gemini 3.1 Pro (High)
+- **What was accomplished:** 
+  - Successfully recovered from IDE context loss using `BOOT_PROTOCOL.md` and explicit mental model verification.
+  - Pivoted project LLM strategy from "Generic API Routing" to "Local Domain-Specific LoRA Swarm" based on user's exact specifications (NVIDIA GTX 1650 4GB VRAM + student cloud credits).
+  - Designed the 6 foundational domains taxonomy (ADR-010).
+  - Identified critical architectural pivot: Domain seeding requires a Spring `ApplicationRunner` to compute 384-dim embeddings at runtime instead of a raw Flyway script (ADR-011).
+  - Epic 2 (The Semantic Kernel) formally activated.
+  - E2-T1 ✅ — Implemented `DomainContextCacheService` in the `routing` module. Used `StringRedisTemplate` with a 1-hour TTL to isolate context by `userId` and `domain`. Added Redis container (`GenericContainer(redis:7-alpine)`) to `TestcontainersConfig` via `@ServiceConnection`. Wrote `DomainContextCacheServiceTest` which passed alongside the full suite (15/15 tests passing).
+- **Decisions made:** ADR-009, ADR-010, ADR-011 established. Epic 7 renamed to "The LoRA Swarm".
+- **What was left incomplete:** E2-T2 through E2-T6
+- **Next task:** E2-T2 — Add DJL dependencies and implement LocalEmbeddingService (MiniLM 384-dim).

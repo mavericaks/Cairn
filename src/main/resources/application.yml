@@ -44,6 +44,13 @@ spring:
         # Explicit dialect was removed to eliminate HHH90000025 deprecation warning.
         # PostgreSQL-specific features (JSONB, array types) are available via auto-detection.
 
+  # ── Redis (E2-T1) ───────────────────────────────────────────────
+  # WHY: Domain Context Cache connection. Uses REDIS_URL for Railway
+  # compatibility, defaulting to localhost for dev (ADR-004, Rule 14).
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+
   # ── Flyway Schema Migrations (E1-T3) ────────────────────────────
   flyway:
     # WHY: Flyway provides versioned, repeatable schema migrations.

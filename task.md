@@ -11,30 +11,25 @@
 
 | Field | Value |
 |-------|-------|
-| Epic Number | 1 |
-| Epic Title | The Foundation |
-| Capability | Spring Modulith project structure, Flyway migrations, CI/CD pipeline, structured logging, Docker |
-| Interview Story | "I set up the project with Spring Modulith to enforce hard module boundaries from day one — here's why that matters over plain packages..." |
-| Status | ⚪ NOT STARTED |
-| Definition of Done | `mvn clean install` passes. Structured JSON logs confirmed. Zero `System.out.println`. Docker image builds. CI pipeline runs on push. Module structure matches ADR-001. |
+| Epic Number | 2 |
+| Epic Title | The Semantic Kernel |
+| Capability | Local zero-cost semantic intent classification (DJL + pgvector) and Redis context caching |
+| Interview Story | "I built a semantic router that classifies intent in 15ms locally, completely bypassing the massive cost and latency of asking an LLM to decide which agent should handle the prompt." |
+| Status | 🟢 ACTIVE |
+| Definition of Done | `SemanticKernelTests` integration test passes using Testcontainers, successfully embedding a prompt via DJL, finding the correct domain via pgvector, and caching the context in Redis. |
 
 ---
 
-## Epic 1 Task Board
+## Epic 2 Task Board
 
 | ID | Task | Status |
 |----|------|--------|
-| E1-T1 | Initialize Maven project with correct Java 21 + Spring Boot 3.x + Spring Modulith dependencies | ✅ |
-| E1-T2 | Define Spring Modulith module structure (`routing`, `model`, `agents`, `tools`, `observability`, `security`) | ✅ |
-| E1-T3 | Configure Flyway + PostgreSQL (Docker). Create V1 migration (pgvector extension + base schema) | ✅ |
-| E1-T4 | Configure SLF4J + Logback JSON structured logging. logback-spring.xml with rotating file output | ✅ |
-| E1-T5 | Create multi-stage Dockerfile (eclipse-temurin:21-jre-alpine) | ✅ |
-| E1-T6 | Create GitHub Actions CI pipeline (`ci.yml` — build, test, Docker build on every PR) | ✅ |
-| E1-T7 | Write smoke test: ApplicationContext loads, modules are isolated, logging outputs JSON | ✅ |
-| E1-T9 | Create `railway.toml` deployment configuration (ADR-005) | ✅ |
-| E1-T10 | Create `.env.example` with all required environment variable keys (ADR-007) | ✅ |
-| E1-T11 | Create `docker-compose.yml` for local dev environment (Spring Boot + PostgreSQL + Redis) mirroring Railway stack (ADR-005) | ✅ |
-| E1-T8 | Write `walkthrough_epic1.md` | ✅ |
+| E2-T1 | Implement Redis context cache with TTL per domain (ADR-004) | ✅ |
+| E2-T2 | Add DJL dependencies and implement LocalEmbeddingService (MiniLM 384-dim) (ADR-002) | ⚪ |
+| E2-T3 | Create DomainSeeder ApplicationRunner to inject the 6 foundational domains | ⚪ |
+| E2-T4 | Implement DomainRouter for pgvector cosine similarity search | ⚪ |
+| E2-T5 | Write Testcontainers integration test combining Postgres + Redis + DJL | ⚪ |
+| E2-T6 | Update PROJECT_JOURNAL.md and write walkthrough_epic2.md | ⚪ |
 
 ---
 
@@ -97,6 +92,7 @@
 | E1-T10 | Create .env.example with all env var keys (ADR-007) | 2026-06-14 | 3 required (DB_*), 3 optional (PORT, LOG_PATH, SPRING_PROFILES_ACTIVE), 3 future (OPENAI_*, REDIS_URL). Format examples, Railway notes, ADR cross-refs. |
 | E1-T11 | Create docker-compose.yml for local dev | 2026-06-14 | Postgres (pgvector/pgvector:pg17) and Redis (redis:7-alpine). Named volumes and healthchecks for both. Spring Boot app excluded from compose for IDE running. |
 | E1-T8 | Write walkthrough_epic1.md | 2026-06-14 | Extensive architectural deep-dive into Epic 1. Explained the "Why" for Java 21, Modulith, PostgreSQL, pgvector, Flyway, and infrastructure. |
+| E2-T1 | Implement Redis context cache with TTL per domain (ADR-004) | 2026-06-15 | Enforced Rule 16 (Production-Grade First). Handled null inputs, graceful degradation on Redis downtime, and added Micrometer tracking for hit/miss/failure. Testcontainers integration test covers all edge cases. |
 
 ---
 
@@ -114,16 +110,8 @@
 
 | Epic | Title | Proposed | Approved |
 |------|-------|---------|----------|
-| 2 | The Semantic Kernel | Session 0 | Pending Session 1 review |
-
-> **Epic 2 — Known Tasks (preliminary, finalized when Epic 2 is activated):**
->
-> | ID | Task | Status |
-> |----|------|--------|
-> | E2-T1 | Implement Redis context cache with TTL per domain (ADR-004) | ⚪ |
-> | ... | [Remaining tasks defined at Epic 2 activation] | — |
 | 3 | The Agent Swarm | Session 0 | Pending |
 | 4 | Observability | Session 0 | Pending |
 | 5 | Agentic Tools (Safe) | Session 0 | Pending |
 | 6 | Security Hardening | Session 0 | Pending |
-| 7 | Multi-Model Routing | Session 0 | Pending |
+| 7 | The LoRA Swarm | Session 3 | Pending |

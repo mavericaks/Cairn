@@ -146,6 +146,17 @@
         </dependency>
 
         <!-- ═══════════════════════════════════════════════════════════
+             Caching Layer (ADR-004)
+             ═══════════════════════════════════════════════════════════ -->
+
+        <!-- WHY: Spring Data Redis provides the caching infrastructure for the
+             Domain Context Cache. Sits between semantic routing and LLM execution. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════
              Test Dependencies
              ═══════════════════════════════════════════════════════════ -->
 

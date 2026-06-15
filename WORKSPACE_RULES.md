@@ -160,6 +160,14 @@ complete solution — not a lesser version that avoids asking.
 
 ---
 
+## RULE 16 — Production-Grade First (No Happy Path Only)
+Code is never built just to "make it work". It must be production-grade from the first line.
+This means explicitly handling null inputs, aggressively catching and degrading gracefully on external dependency failures (e.g., Redis down, DB timeout), and adding observability metrics (Micrometer) for every external integration.
+- **Enforcement:** Every integration test suite must contain explicit `@Test` methods for failure modes (e.g., `shouldDegradeGracefullyWhenRedisIsDown()`). Code must explicitly check assertions (`Assert.notNull`).
+- **Violation:** Delivering a "happy path only" implementation. Failing to handle `null` inputs. Failing to catch and gracefully degrade `RedisConnectionFailureException` or similar external infrastructure exceptions.
+
+---
+
 ## Adding or Modifying Rules
 1. Propose the new rule in chat with justification.
 2. User approves.
