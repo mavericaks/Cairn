@@ -105,6 +105,21 @@
 - **Update (E1-T2):** `model` module added to separate LLM client management (HOW to call) from routing (WHERE to send). Prevents `routing` from spanning Epic 2 and Epic 7.
 - **Files:** `src/main/java/com/cairn/` — module root. Six modules: `routing`, `model`, `agents`, `tools`, `observability`, `security`.
 
+### ADR-012: The 4GB VRAM Hardware Constraint
+**Date:** 2026-06-16
+**Context:** The host machine is a laptop with an NVIDIA GTX 1650 (4GB VRAM). We cannot run LLaVA, large embedding models, or complex multi-modal pre-processing locally without OOM crashing.
+**Decision:** All multimodal ingestion (Audio, Video, PDF, Images) will be outsourced to the Gemini Cloud API (Spring AI Multi-Modal) for pre-processing into markdown text. Local generation (Stable Diffusion) is deferred to Epic 5, potentially using Cloud APIs if VRAM cannot support 4-bit quantization.
+
+### ADR-013: Enterprise Foundation Hardening
+**Date:** 2026-06-16
+**Context:** Epic 1 focused on macro-architecture (Modulith, Testcontainers, DB) but lacked micro-enterprise features required for true production readiness. 
+**Decision:** Retroactively applied the following pillars:
+1. **Spotless (Google Java Format):** Enforced code style consistency in CI.
+2. **Bucket4j:** Implemented token-bucket rate limiting via `RateLimitFilter` to protect free-tier LLM API endpoints from DoS abuse.
+3. **RFC 7807 Global Exception Handling:** Replaced Tomcat HTML errors with structured JSON `ProblemDetail` via `@RestControllerAdvice`.
+4. **Data Validation:** Added `spring-boot-starter-validation` for `@Valid` DTO protection.
+5. **Swagger/OpenAPI:** Exposed API contracts automatically at `/swagger-ui.html`.
+
 ### ADR-002: Local MiniLM Embeddings
 - **Date:** [Session 1]
 - **Decision:** Use local Transformers (MiniLM, 384-dim) for all embedding operations.

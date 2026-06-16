@@ -93,6 +93,7 @@
 | E1-T11 | Create docker-compose.yml for local dev | 2026-06-14 | Postgres (pgvector/pgvector:pg17) and Redis (redis:7-alpine). Named volumes and healthchecks for both. Spring Boot app excluded from compose for IDE running. |
 | E1-T8 | Write walkthrough_epic1.md | 2026-06-14 | Extensive architectural deep-dive into Epic 1. Explained the "Why" for Java 21, Modulith, PostgreSQL, pgvector, Flyway, and infrastructure. |
 | E2-T1 | Implement Redis context cache with TTL per domain (ADR-004) | 2026-06-15 | Enforced Rule 16 (Production-Grade First). Handled null inputs, graceful degradation on Redis downtime, and added Micrometer tracking for hit/miss/failure. Testcontainers integration test covers all edge cases. |
+| E1-T12 | Enterprise Hardening (Spotless, GlobalExceptionHandler, Validation, Swagger, Rate Limiting) | 2026-06-15 | Enforced static code quality, centralized error handling, input validation, API documentation, and DoS protection. |
 
 ---
 

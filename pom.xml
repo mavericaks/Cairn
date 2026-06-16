@@ -146,6 +146,32 @@
         </dependency>
 
         <!-- ═══════════════════════════════════════════════════════════
+             Enterprise Hardening (E1-T12)
+             ═══════════════════════════════════════════════════════════ -->
+
+        <!-- WHY: Enforces input validation (@Valid, @NotNull) before reaching business logic. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- WHY: Generates Swagger/OpenAPI documentation automatically at /swagger-ui.html.
+             Critical for frontend developers to understand our backend contracts. -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.8.5</version>
+        </dependency>
+
+        <!-- WHY: Token-bucket rate limiting algorithm to protect our free-tier LLM APIs
+             from brute-force or runaway client scripts. -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.10.1</version>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════
              Caching Layer (ADR-004)
              ═══════════════════════════════════════════════════════════ -->
 
@@ -208,6 +234,32 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            
+            <!-- WHY: Spotless enforces Google Java Format (GJF) automatically.
+                 No more arguments about spaces vs tabs. Fails the build if formatting is wrong. -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.44.2</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat>
+                            <version>1.25.2</version>
+                            <style>GOOGLE</style>
+                        </googleJavaFormat>
+                        <removeUnusedImports/>
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <!-- WHY: Run spotless:check during the verify phase so CI fails if unformatted -->
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
