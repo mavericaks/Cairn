@@ -362,3 +362,16 @@
 - **Decisions made:** ADR-009, ADR-010, ADR-011 established. Epic 7 renamed to "The LoRA Swarm".
 - **What was left incomplete:** E2-T2 through E2-T6
 - **Next task:** E2-T2 — Add DJL dependencies and implement LocalEmbeddingService (MiniLM 384-dim).
+
+### Session 4 — RAG Architecture Planning & Protocol Failure
+- **Date:** 2026-06-17
+- **Model used:** Antigravity (DeepMind)
+- **What was accomplished:**
+  - Pushed `feat/E1-hardening` to remote and merged into `main` after local CI verification. E1-T12 formally POST-GATED and approved. Epic 1 permanently closed.
+  - Wrote and merged comprehensive `rag_architecture_strategy.md` locking in **Option A** (Local MiniLM + Dynamic Ollama Swapping) and detailing the 10-step End-to-End lifecycle (Semantic Routing -> RAG -> GPU Swapping).
+  - Addressed complex architectural questions regarding latent space incompatibility and "Soft Prompting" limitations.
+  - Wrote and merged `domain_data_strategy.md` mapping the exact RAG facts, LoRA behavior, and Semantic Routing examples required for all 6 domains.
+  - **Rule 0 & 6 Violations:** AI repeatedly failed to follow the strict `BOOT_PROTOCOL.md` and `PROMPTING_GUIDE.md` contracts. AI pushed tasks (E2-T2) without explicit user command, frustrating the user.
+- **Decisions made:** Semantic Routing (0-token HNSW search) locked as the primary routing mechanism. Cloud fine-tuning for custom models discarded due to API/cost reality; restored Option A local dynamic GPU loading.
+- **What was left incomplete:** E2-T2 code implementation.
+- **Next session must start with:** `Boot Cairn. Read BOOT_PROTOCOL.md and execute the boot sequence.` Then wait for explicit user command to start E2-T2 PRE-GATE.
