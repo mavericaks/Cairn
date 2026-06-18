@@ -406,15 +406,18 @@
   - Wrote and merged `domain_data_strategy.md` mapping the exact RAG facts, LoRA behavior, and Semantic Routing examples required for all 6 domains.
   - **Rule 0 & 6 Violations:** AI repeatedly failed to follow the strict `BOOT_PROTOCOL.md` and `PROMPTING_GUIDE.md` contracts. AI pushed tasks (E2-T2) without explicit user command, frustrating the user.
 - **Decisions made:** Semantic Routing (0-token HNSW search) locked as the primary routing mechanism. Cloud fine-tuning for custom models discarded due to API/cost reality; restored Option A local dynamic GPU loading.
-- **What was left incomplete:** E2-T3 through E2-T6, plus Epic 7 ML tasks.
-- **Next task:** E2-T3 (DomainSeeder) OR E7-T1 (model.py Llama-3).
+- **What was left incomplete:** E2-T4 through E2-T6, plus Epic 7 ML tasks.
+- **Next task:** E2-T4 (DomainRouter) OR E7-T1 (model.py Llama-3).
 
-### Session 5 — Local CPU Embedding Engine
+### Session 5 — Local CPU Embedding Engine & Domain Seeding
 - **Date:** 2026-06-18
 - **Model used:** Antigravity (DeepMind)
 - **What was accomplished:** 
   - Added Deep Java Library (DJL) dependencies to `pom.xml`.
   - Implemented `LocalEmbeddingService` using the HuggingFace `all-MiniLM-L6-v2` Sentence Transformer.
-  - Test passed, confirming exactly 384 dimensions returned, 0 network requests made, and running strictly on CPU.
+  - Added `hibernate-vector` dependency to map PostgreSQL `vector` columns to Java `float[]` via `@JdbcTypeCode(SqlTypes.VECTOR)`.
+  - Implemented `Domain` entity and `DomainRepository`.
+  - Implemented `DomainSeeder` `ApplicationRunner` to inject the 6 foundational domains dynamically at startup, avoiding hardcoded vectors.
+  - Test passed, confirming exactly 384 dimensions returned, 0 network requests made, running strictly on CPU, and database idempotency preserved.
 - **Decisions made:** Epic 7 created as a parallel side-quest so cloud ML training does not bottleneck Spring Boot framework progression.
-- **What was left incomplete:** E2-T3 through E2-T6, plus Epic 7 ML tasks.
+- **What was left incomplete:** E2-T4 through E2-T6, plus Epic 7 ML tasks.

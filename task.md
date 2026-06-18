@@ -26,7 +26,7 @@
 |----|------|--------|
 | E2-T1 | Implement Redis context cache with TTL per domain (ADR-004) | ✅ |
 | E2-T2 | Add DJL dependencies and implement LocalEmbeddingService (MiniLM 384-dim) (ADR-002) | ✅ |
-| E2-T3 | Create DomainSeeder ApplicationRunner to inject the 6 foundational domains | ⚪ |
+| E2-T3 | Create DomainSeeder ApplicationRunner to inject the 6 foundational domains | ✅ |
 | E2-T4 | Implement DomainRouter for pgvector cosine similarity search | ⚪ |
 | E2-T5 | Write Testcontainers integration test combining Postgres + Redis + DJL | ⚪ |
 | E2-T6 | Update PROJECT_JOURNAL.md and write walkthrough_epic2.md | ⚪ |
@@ -108,6 +108,7 @@
 | E2-T1 | Implement Redis context cache with TTL per domain (ADR-004) | 2026-06-15 | Enforced Rule 16 (Production-Grade First). Handled null inputs, graceful degradation on Redis downtime, and added Micrometer tracking for hit/miss/failure. Testcontainers integration test covers all edge cases. |
 | E1-T12 | Enterprise Hardening (Spotless, GlobalExceptionHandler, Validation, Swagger, Rate Limiting) | 2026-06-15 | Enforced static code quality, centralized error handling, input validation, API documentation, and DoS protection. |
 | E2-T2 | Add DJL dependencies and implement LocalEmbeddingService | 2026-06-18 | Added Deep Java Library to calculate 384-dimensional arrays offline natively on CPU using HuggingFace all-MiniLM-L6-v2. No network requests. |
+| E2-T3 | Create DomainSeeder ApplicationRunner | 2026-06-18 | Built Domain entity with hibernate-vector, DomainRepository, and DomainSeeder. Seeded 6 foundational domains at startup, dynamically calculating embeddings to avoid hardcoded tensors. |
 
 ---
 

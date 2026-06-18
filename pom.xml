@@ -125,6 +125,14 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- WHY: Hibernate pgvector support. Allows mapping PostgreSQL vector columns
+             directly to float[] in JPA entities using @JdbcTypeCode(SqlTypes.VECTOR). (ADR-011) -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-vector</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
+
         <!-- ═══════════════════════════════════════════════════════════
              Schema Migrations
              ═══════════════════════════════════════════════════════════ -->
