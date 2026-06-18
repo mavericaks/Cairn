@@ -24,6 +24,7 @@
         <java.version>21</java.version>
         <spring-modulith.version>1.4.12</spring-modulith.version>
         <spring-ai.version>1.1.7</spring-ai.version>
+        <djl.version>0.30.0</djl.version>
     </properties>
 
     <dependencyManagement>
@@ -55,6 +56,16 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
                 <version>1.20.6</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- WHY: BOM manages all Deep Java Library (DJL) versions.
+                 Ensures the API, Engine, and Tokenizers are all compatible. (ADR-002) -->
+            <dependency>
+                <groupId>ai.djl</groupId>
+                <artifactId>bom</artifactId>
+                <version>${djl.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -143,6 +154,36 @@
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-openai</artifactId>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════
+             Local Embeddings (Epic 2)
+             ═══════════════════════════════════════════════════════════ -->
+
+        <!-- WHY: DJL API for standard ML operations in Java. (ADR-002) -->
+        <dependency>
+            <groupId>ai.djl</groupId>
+            <artifactId>api</artifactId>
+        </dependency>
+
+        <!-- WHY: PyTorch native engine for DJL to execute the MiniLM model locally on CPU. (ADR-002) -->
+        <dependency>
+            <groupId>ai.djl.pytorch</groupId>
+            <artifactId>pytorch-engine</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- WHY: DJL Model Zoo for PyTorch. Provides the pre-packaged HuggingFace MiniLM models. -->
+        <dependency>
+            <groupId>ai.djl.pytorch</groupId>
+            <artifactId>pytorch-model-zoo</artifactId>
+        </dependency>
+
+        <!-- WHY: HuggingFace tokenizers bridge for DJL. Required to properly tokenize text
+             before passing it to the MiniLM PyTorch model. (ADR-002) -->
+        <dependency>
+            <groupId>ai.djl.huggingface</groupId>
+            <artifactId>tokenizers</artifactId>
         </dependency>
 
         <!-- ═══════════════════════════════════════════════════════════

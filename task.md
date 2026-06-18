@@ -25,11 +25,24 @@
 | ID | Task | Status |
 |----|------|--------|
 | E2-T1 | Implement Redis context cache with TTL per domain (ADR-004) | ✅ |
-| E2-T2 | Add DJL dependencies and implement LocalEmbeddingService (MiniLM 384-dim) (ADR-002) | ⚪ |
+| E2-T2 | Add DJL dependencies and implement LocalEmbeddingService (MiniLM 384-dim) (ADR-002) | ✅ |
 | E2-T3 | Create DomainSeeder ApplicationRunner to inject the 6 foundational domains | ⚪ |
 | E2-T4 | Implement DomainRouter for pgvector cosine similarity search | ⚪ |
 | E2-T5 | Write Testcontainers integration test combining Postgres + Redis + DJL | ⚪ |
 | E2-T6 | Update PROJECT_JOURNAL.md and write walkthrough_epic2.md | ⚪ |
+
+---
+
+## Epic 7 Task Board (Parallel Side-Quest)
+> **Note:** We are executing Epic 7 in parallel with the Java backend to speed up the massive ML training workload.
+| ID | Task | Status |
+|----|------|--------|
+| E7-T1 | Write `model.py`: Pure PyTorch Llama-3 architecture | ⚪ |
+| E7-T2 | Write `loader.py`: HuggingFace safetensors state dict mapping | ⚪ |
+| E7-T3 | Write `lora.py`: Custom Low-Rank Adaptation injection | ⚪ |
+| E7-T4 | Write `train.py`: The PyTorch training loop | ⚪ |
+| E7-T5 | Write `export.py`: Merge adapters and compile to GGUF | ⚪ |
+| E7-T6 | Orchestrate dynamic loading in Spring Boot | ⚪ |
 
 ---
 
@@ -94,6 +107,7 @@
 | E1-T8 | Write walkthrough_epic1.md | 2026-06-14 | Extensive architectural deep-dive into Epic 1. Explained the "Why" for Java 21, Modulith, PostgreSQL, pgvector, Flyway, and infrastructure. |
 | E2-T1 | Implement Redis context cache with TTL per domain (ADR-004) | 2026-06-15 | Enforced Rule 16 (Production-Grade First). Handled null inputs, graceful degradation on Redis downtime, and added Micrometer tracking for hit/miss/failure. Testcontainers integration test covers all edge cases. |
 | E1-T12 | Enterprise Hardening (Spotless, GlobalExceptionHandler, Validation, Swagger, Rate Limiting) | 2026-06-15 | Enforced static code quality, centralized error handling, input validation, API documentation, and DoS protection. |
+| E2-T2 | Add DJL dependencies and implement LocalEmbeddingService | 2026-06-18 | Added Deep Java Library to calculate 384-dimensional arrays offline natively on CPU using HuggingFace all-MiniLM-L6-v2. No network requests. |
 
 ---
 
