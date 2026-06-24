@@ -1,0 +1,1013 @@
+# Cairn — Master Execution Plan
+
+> **This document is the single source of truth for what to build, in what order, and how.**
+> Every task has: a goal, file-level instructions, layer coverage, gate checklists, SDE compliance checks, **and a mandatory learning phase.**
+> This plan is designed so that ANY model (Gemini, Claude, or human) can pick up a task and execute it without ambiguity.
+> **The learner (Akshat) must understand every concept deeply before code is written. Building without understanding is forbidden.**
+
+---
+
+## Restructured Gate System
+
+### PRE-GATE (Before Starting Any Task)
+
+The executor MUST output the following block and receive explicit user approval before writing any code:
+
+```
+=== PRE-GATE: [Task ID] ===
+Task         : [one-line description]
+Goal         : [what this task achieves]
+Files        : [list of files to create/modify]
+Layers       : [which of the 13 layers this touches]
+Dependencies : [which tasks must be complete first]
+Assumptions  : [any assumptions — user must confirm or deny each]
+SDE Standards: [which of the 10 standards apply to this task]
+================================
+```
+
+User responds: **"PRE-GATE approved. Proceed."** or asks questions.
+
+### LEARN Phase (Between PRE-GATE and EXECUTION — MANDATORY)
+
+Before writing a single line of code, the executor MUST teach the learner the core concepts of the task. This is NOT optional. This is NOT a quick summary. This follows the **Teaching Protocol** (Section 15 below).
+
+**Flow:**
+1. Identify the **Concepts to Master** listed in the task
+2. For EACH concept, follow the 9-stage teaching flow (diagnose → frame → baseline → insight → mechanics → example → edge cases → tradeoffs → verify)
+3. The learner must demonstrate understanding by answering questions and explaining the concept back
+4. Only after the learner passes the understanding check does coding begin
+5. If using Gemini for execution: Gemini must FIRST output a `=== CONCEPT BRIEF ===` block explaining what it's about to build and WHY, written as if teaching the learner. The learner reviews this before code is written.
+
+```
+=== CONCEPT BRIEF: [Task ID] ===
+Concepts     : [list of concepts this task uses]
+Why It Matters: [why this concept exists, what problem it solves]
+How It Works  : [mechanics — step by step, not just "it does X"]
+Key Insight   : [the non-obvious thing that makes this work]
+Tradeoffs     : [what we gain, what we lose, alternatives considered]
+Edge Cases    : [what could go wrong, how we handle it]
+================================
+```
+
+The learner reviews the brief, asks questions if confused, and says **"Concept understood. Proceed to code."**
+
+### EXECUTION Rules
+
+1. Follow the file-level instructions in this plan exactly
+2. Every new Java class gets: Javadoc, WHY comments, SLF4J logger
+3. Every service method that's a public API gets: `@Audited` (once AOP is built), input validation
+4. Every new REST endpoint gets: DTO input/output, `@Valid`, proper HTTP status codes, pagination where applicable
+5. Run `mvn spotless:apply` before committing
+6. Run `mvn verify` — all tests must pass
+7. No code is committed without a test
+8. While writing code, explain non-obvious decisions with inline `// WHY:` comments
+
+### POST-GATE (Before Marking Complete)
+
+The executor MUST output the following block and receive explicit user approval:
+
+```
+=== POST-GATE: [Task ID] ===
+Files Created  : [list with paths]
+Files Modified : [list with paths]
+Tests Added    : [list with names and what they verify]
+Tests Passing  : [X/X all green]
+SDE Compliance : [checklist of which standards were applied]
+Layer Coverage : [which layers were addressed]
+Build Status   : mvn verify ✅
+Spotless       : applied ✅
+================================
+```
+
+User responds: **"POST-GATE approved."**
+
+Then:
+1. `git checkout -b feat/[task-id]`
+2. `git add . && git commit -m "[Task ID]: [description]"`
+3. `git push origin feat/[task-id]`
+4. CI passes on GitHub Actions
+5. `git checkout main && git merge feat/[task-id] && git push origin main`
+6. Update `task.md` — mark task ✅
+7. Update `PROJECT_JOURNAL.md` — add session entry
+
+---
+
+## 13-Layer Reference
+
+| # | Layer | Key Technologies |
+|---|-------|-----------------|
+| L1 | Frontend Foundations | React, Vite, TypeScript, Nginx |
+| L2 | APIs & Backend Logic | Spring Boot, REST, SSE, DTOs |
+| L3 | Database & Storage | PostgreSQL, pgvector, Flyway, MinIO |
+| L4 | Auth & Permissions | OAuth2, JWT, Spring Security |
+| L5 | Hosting & Deployment | Docker, Railway |
+| L6 | Cloud & Computing | Ollama, DJL, GPU management |
+| L7 | CI/CD & Version Control | GitHub Actions, Git |
+| L8 | Security & Role-Level | CORS, CSP, RBAC, HITL |
+| L9 | Rate Limiting | Bucket4j, Redis-backed |
+| L10 | Caching & CDN | Redis, @Cacheable, Spring Cache |
+| L11 | Load Balancing & Scaling | K8s, HPA, Helm |
+| L12 | Error Tracking & Logs | Logback, Micrometer, Zipkin, Prometheus |
+| L13 | Availability & Recovery | Resilience4j, health checks, graceful shutdown |
+
+---
+
+## Epic 2: The Semantic Kernel (Hardening + Completion)
+
+**Capability:** Local zero-cost semantic intent classification
+**Status:** 🟢 IN PROGRESS (E2-T1, T2, T3 complete — needs hardening and router)
+**Layers:** L2, L3, L6, L10
+
+**Concepts to Master (Epic-level):**
+- Thread safety in Java — what happens when 2 threads call the same method simultaneously, why `synchronized` isn't always the answer, what thread-safe alternatives exist
+- DJL (Deep Java Library) — what a Predictor is, why it's not thread-safe, what a ZooModel is
+- Vector embeddings — what they represent geometrically, why cosine similarity works, what HNSW does
+- pgvector — how PostgreSQL stores and indexes vectors, what the `<=>` operator does
+- `@ConfigurationProperties` — how Spring binds YAML to Java objects, why it's better than `@Value`
+
+---
+
+### E2-T4: Harden LocalEmbeddingService
+
+**Goal:** Fix thread safety, return type, and initialization issues identified in the audit.
+
+**Files to modify:**
+- `src/main/java/com/cairn/routing/LocalEmbeddingService.java` — Fix thread safety (use Predictor pool or per-call creation), change `embed()` return type from `List<Double>` to `float[]`, use `@PostConstruct` for lazy init with health flag
+- `src/main/java/com/cairn/routing/DomainSeeder.java` — Remove the `List<Double>` → `float[]` conversion (now unnecessary), add per-domain try-catch
+- `src/test/java/com/cairn/routing/LocalEmbeddingServiceTest.java` — Update assertions for `float[]` return type, add concurrent access test
+- `src/test/java/com/cairn/routing/DomainSeederTest.java` — Update mock return types
+
+**Files to create:**
+- `src/main/java/com/cairn/routing/CairnEmbeddingProperties.java` — `@ConfigurationProperties(prefix = "cairn.embedding")` with model URL, engine, and dimension fields **(SDE Standard #3)**
+
+**Layers:** L2, L6
+**SDE Standards:** #3 (ConfigurationProperties), #5 (exception handling)
+**Dependencies:** None
+
+---
+
+### E2-T5: Expand DomainSeeder with Example Queries
+
+**Goal:** Add `domain_examples` table and seed 10+ example queries per domain for routing accuracy.
+
+**Files to create:**
+- `src/main/resources/db/migration/V2__domain_examples.sql` — CREATE TABLE `domain_examples` with UUID PK, domain_id FK, example_text, embedding vector(384), HNSW index
+- `src/main/java/com/cairn/routing/DomainExample.java` — JPA entity
+- `src/main/java/com/cairn/routing/DomainExampleRepository.java` — Spring Data repo
+
+**Files to modify:**
+- `src/main/java/com/cairn/routing/DomainSeeder.java` — Add `seedExamples()` method that seeds 10 example queries per domain (from `domain_data_strategy.md`), computes embeddings dynamically
+- `src/main/java/com/cairn/routing/Domain.java` — Add `@OneToMany` relationship to DomainExample, add `active` boolean field **(matches updated schema)**
+
+**Layers:** L2, L3
+**SDE Standards:** #1 (DTO not needed here — internal seeding, no API exposure yet)
+**Dependencies:** E2-T4
+
+---
+
+### E2-T6: Implement DomainRouter
+
+**Goal:** The core routing engine — embed user query, search `domain_examples` via pgvector cosine similarity, return the best-match domain.
+
+**Files to create:**
+- `src/main/java/com/cairn/routing/DomainRouter.java` — Service that: (1) calls `LocalEmbeddingService.embed(userText)`, (2) executes native pgvector query against `domain_examples` using HNSW cosine similarity, (3) returns `RoutingResult(domainName, score, latencyMs)`
+- `src/main/java/com/cairn/routing/RoutingResult.java` — Record/DTO: `domainName`, `score`, `latencyMs`
+- `src/main/java/com/cairn/routing/DomainNotFoundException.java` — Custom exception when no domain scores above threshold **(SDE Standard #5)**
+- `src/test/java/com/cairn/routing/DomainRouterTest.java` — Integration test using Testcontainers: seed domains + examples, route a known query, assert correct domain returned
+
+**Key implementation detail:** The pgvector query uses a native SQL query:
+```sql
+SELECT de.domain_id, d.name, 1 - (de.embedding <=> CAST(:queryVector AS vector)) AS score
+FROM domain_examples de JOIN domains d ON de.domain_id = d.id
+WHERE d.active = true
+ORDER BY de.embedding <=> CAST(:queryVector AS vector)
+LIMIT 1
+```
+
+**Also implement:** In-memory cosine similarity fallback (used when pgvector is unavailable) — a hand-written `cosineSimilarity(float[], float[])` method. This satisfies the SDE "write your own algorithm" requirement and serves as graceful degradation.
+
+**Layers:** L2, L3, L13
+**SDE Standards:** #5 (custom exception), #10 (native query with join)
+**Dependencies:** E2-T5
+
+---
+
+### E2-T7: SemanticKernelTests Integration Test
+
+**Goal:** End-to-end integration test proving the full routing pipeline works: embed → search → route.
+
+**Files to create:**
+- `src/test/java/com/cairn/routing/SemanticKernelTests.java` — `@SpringBootTest` + `@Import(TestcontainersConfig.class)`. Seeds domains and examples via the real `DomainSeeder`, then routes 6 known queries and asserts each lands on the correct domain.
+
+**Layers:** L2, L3
+**Dependencies:** E2-T6
+
+---
+
+### E2-T8: Epic 2 Walkthrough + Journal Update
+
+**Goal:** Documentation closure.
+
+**Files to modify:**
+- `task.md` — Mark all E2 tasks ✅, archive Epic 2
+- `PROJECT_JOURNAL.md` — Add session entry with decisions, files, and lessons learned
+
+**Files to create:**
+- `walkthrough_epic2.md` — Summary of what was built, architecture diagrams, test results
+
+**Layers:** None (documentation only)
+**Dependencies:** E2-T7
+
+---
+
+## Epic 3: The Chat API
+
+**Capability:** End-to-end chat pipeline with SSE streaming — user sends text, gets a streamed AI response
+**Layers:** L2, L3, L6, L10
+
+**Concepts to Master (Epic-level):**
+- Exception hierarchies in Java — checked vs unchecked, when to extend RuntimeException, how `@ControllerAdvice` maps exceptions to HTTP status codes
+- DTO pattern — why entities must never leak past the service layer, what happens if they do (lazy loading exceptions, circular references, data exposure)
+- Server-Sent Events (SSE) — how SSE differs from WebSocket (unidirectional vs bidirectional), how `Flux<ServerSentEvent>` works in Spring WebFlux, how the browser reads an SSE stream
+- Strategy Pattern — why an interface + multiple implementations is better than if-else chains, how Spring's dependency injection auto-discovers all implementations
+- Template Method Pattern — what the base class defines vs what subclasses override, when this is better than Strategy
+- AOP (Aspect-Oriented Programming) — how Spring proxies work, what `@Around` advice does, why `@Audited` is cross-cutting
+- Spring Profiles — how `application-{profile}.yml` overrides `application.yml`, how to activate profiles
+- `@ConfigurationProperties` — type-safe config binding, validation with `@Validated`
+
+---
+
+### E3-T1: Core Exception Hierarchy + Base DTOs
+
+**Goal:** Establish the exception framework and base DTO patterns used by ALL subsequent Epics.
+
+**Files to create:**
+- `src/main/java/com/cairn/model/exception/CairnException.java` — Base runtime exception with `errorCode` and `httpStatus` fields
+- `src/main/java/com/cairn/model/exception/DomainNotFoundException.java` — extends CairnException, 404
+- `src/main/java/com/cairn/model/exception/ModelNotLoadedException.java` — extends CairnException, 503
+- `src/main/java/com/cairn/model/exception/RateLimitExceededException.java` — extends CairnException, 429
+- `src/main/java/com/cairn/model/exception/IllegalStateTransitionException.java` — extends CairnException, 409
+- `src/main/java/com/cairn/model/dto/ErrorResponse.java` — Record: `timestamp`, `status`, `errorCode`, `message`, `path`
+- `src/main/java/com/cairn/model/dto/PageResponse.java` — Generic wrapper for paginated responses
+
+**Files to modify:**
+- `src/main/java/com/cairn/observability/GlobalExceptionHandler.java` — Add handlers for each new exception type, return `ErrorResponse` DTO
+
+**Layers:** L2
+**SDE Standards:** #1 (DTO), #5 (exception hierarchy)
+**Dependencies:** None
+
+---
+
+### E3-T2: Conversation & Message Persistence
+
+**Goal:** Flyway migrations + JPA entities + repositories for conversations and messages.
+
+**Files to create:**
+- `src/main/resources/db/migration/V3__conversations_messages.sql` — CREATE TABLE `conversations` and `messages` with all FKs, indexes, enums as defined in the technical spec
+- `src/main/java/com/cairn/agents/Conversation.java` — JPA entity
+- `src/main/java/com/cairn/agents/Message.java` — JPA entity with `MessageRole` enum
+- `src/main/java/com/cairn/agents/ConversationRepository.java` — `Page<Conversation> findByUserId(UUID userId, Pageable pageable)`
+- `src/main/java/com/cairn/agents/MessageRepository.java` — `Page<Message> findByConversationIdOrderByCreatedAtDesc(UUID conversationId, Pageable pageable)`, native query for multi-join search **(SDE Standard #10)**
+- `src/main/java/com/cairn/agents/dto/ConversationDto.java` — Record **(SDE Standard #1)**
+- `src/main/java/com/cairn/agents/dto/MessageDto.java` — Record **(SDE Standard #1)**
+- `src/main/java/com/cairn/agents/ConversationMapper.java` — Entity ↔ DTO mapper **(SDE Standard #1)**
+- `src/test/java/com/cairn/agents/ConversationRepositoryTest.java` — Integration test
+
+**Layers:** L2, L3
+**SDE Standards:** #1 (DTO), #2 (pagination), #10 (complex query)
+**Dependencies:** E3-T1
+
+---
+
+### E3-T3: Spring Profiles + Configuration Properties
+
+**Goal:** Externalize all configuration with type-safe binding.
+
+**Files to create:**
+- `src/main/java/com/cairn/model/CairnOllamaProperties.java` — `@ConfigurationProperties(prefix = "cairn.ollama")`: baseUrl, modelName, timeoutSeconds, contextWindow
+- `src/main/java/com/cairn/security/CairnRateLimitProperties.java` — `@ConfigurationProperties(prefix = "cairn.rate-limit")`: requestsPerMinute, burstCapacity
+- `src/main/resources/application-dev.yml` — Local defaults (localhost URLs, debug logging)
+- `src/main/resources/application-prod.yml` — Env var references, JSON logging, stricter security
+
+**Files to modify:**
+- `src/main/resources/application.yml` — Extract hardcoded values into cairn.* properties
+- `src/main/java/com/cairn/security/RateLimitFilter.java` — Inject `CairnRateLimitProperties` instead of hardcoded 20
+
+**Layers:** L2, L5
+**SDE Standards:** #3 (ConfigurationProperties), #6 (Spring Profiles)
+**Dependencies:** None (can run in parallel with E3-T2)
+
+---
+
+### E3-T4: Custom AOP @Audited Annotation
+
+**Goal:** Cross-cutting audit logging via AOP.
+
+**Files to create:**
+- `src/main/java/com/cairn/observability/Audited.java` — `@Target(METHOD) @Retention(RUNTIME)` annotation
+- `src/main/java/com/cairn/observability/AuditAspect.java` — `@Aspect @Component` that intercepts `@Audited` methods, logs: method name, args, duration, return/exception, using SLF4J. Increments Micrometer counter `cairn.audit.method.calls`.
+- `src/test/java/com/cairn/observability/AuditAspectTest.java` — Test that verifies logging occurs
+
+**Layers:** L2, L12
+**SDE Standards:** #4 (AOP annotation)
+**Dependencies:** None (can run in parallel)
+
+---
+
+### E3-T5: Agent Interface + Orchestrator
+
+**Goal:** Define the SwarmAgent contract and the orchestrator that wires routing → agent selection.
+
+**Files to create:**
+- `src/main/java/com/cairn/agents/DomainAgent.java` — Interface: `String getDomainName()`, `Flux<String> handle(AgentRequest request)` **(Strategy Pattern)**
+- `src/main/java/com/cairn/agents/AgentRequest.java` — Record: `userId`, `conversationId`, `message`, `routingResult`, `conversationHistory` (List of MessageDto)
+- `src/main/java/com/cairn/agents/AbstractDomainAgent.java` — Base class implementing common logic: retrieve context from Redis, retrieve last N messages from PostgreSQL, build prompt with token budget, call LLM, return streaming response **(Template Method Pattern)**
+- `src/main/java/com/cairn/agents/AgentOrchestrator.java` — Service that: (1) calls `DomainRouter.route()`, (2) finds the matching `DomainAgent` by domain name, (3) calls `agent.handle()`, (4) publishes `DomainRoutedEvent` **(Observer Pattern)**
+- `src/main/java/com/cairn/agents/impl/AnalyticalAgent.java` — Stub extending `AbstractDomainAgent` with analytical system prompt
+- `src/main/java/com/cairn/agents/impl/DiscoveryAgent.java` — Stub
+- `src/main/java/com/cairn/agents/impl/ConversationalAgent.java` — Stub
+- `src/main/java/com/cairn/agents/impl/ExecutionAgent.java` — Stub
+- `src/main/java/com/cairn/agents/impl/GenerativeAgent.java` — Stub
+- `src/main/java/com/cairn/agents/impl/SystemAgent.java` — Stub
+- `src/main/java/com/cairn/agents/event/DomainRoutedEvent.java` — Application event record
+
+**Layers:** L2
+**SDE Standards:** Design patterns (Strategy, Template Method, Observer)
+**Dependencies:** E2-T6 (DomainRouter), E3-T2 (Conversation/Message persistence)
+
+---
+
+### E3-T6: Ollama Integration (Model Module)
+
+**Goal:** Wire Spring AI to Ollama for local LLM inference with streaming.
+
+**Files to create:**
+- `src/main/java/com/cairn/model/OllamaModelManager.java` — Service that: checks which model is loaded, loads/unloads models via Ollama REST API, tracks model state, exposes health status
+- `src/main/java/com/cairn/model/OllamaHealthIndicator.java` — Custom `HealthIndicator` that checks if Ollama is reachable and reports loaded model **(SDE Standard — custom health indicator)**
+
+**Files to modify:**
+- `pom.xml` — Add `spring-ai-starter-model-ollama` dependency
+- `src/main/resources/application.yml` — Add `spring.ai.ollama.*` configuration
+- `src/main/resources/application-dev.yml` — Ollama localhost:11434 defaults
+
+**Layers:** L2, L6, L13
+**SDE Standards:** #3 (ConfigurationProperties via cairn.ollama)
+**Dependencies:** E3-T3
+
+---
+
+### E3-T7: ChatController + SSE Streaming
+
+**Goal:** The single most important endpoint — `POST /api/v1/chat` that accepts a message and streams back the response.
+
+**Files to create:**
+- `src/main/java/com/cairn/agents/dto/ChatRequest.java` — Record: `@NotBlank String message`, `UUID conversationId` (nullable for new conversation). **(SDE Standard #1)**
+- `src/main/java/com/cairn/agents/dto/ChatStreamEvent.java` — Record: `String type` (TOKEN, ROUTING, DONE, ERROR), `String content`, `String domain`
+- `src/main/java/com/cairn/agents/ChatController.java` — `@RestController @RequestMapping("/api/v1")`. POST `/chat` accepts `@Valid ChatRequest`, returns `Flux<ServerSentEvent<ChatStreamEvent>>`. Orchestrates: validate → route → agent.handle() → persist messages → stream response.
+- `src/test/java/com/cairn/agents/ChatControllerTest.java` — Integration test with mocked Ollama (WireMock or mock bean)
+
+**Layers:** L2
+**SDE Standards:** #1 (DTO), #2 (validated input), #5 (error handling in stream)
+**Dependencies:** E3-T5 (AgentOrchestrator), E3-T6 (Ollama)
+
+---
+
+### E3-T8: Conversation Management API
+
+**Goal:** Traditional CRUD endpoints for conversations — the "SDE proof" endpoints.
+
+**Files to create:**
+- `src/main/java/com/cairn/agents/ConversationController.java` — `GET /conversations` (paginated, filtered by user), `GET /conversations/{id}/messages` (paginated), `DELETE /conversations/{id}`
+- `src/main/java/com/cairn/agents/ConversationService.java` — Business logic: ownership validation (user can only see their own), cascade delete
+- `src/test/java/com/cairn/agents/ConversationControllerTest.java` — Tests for pagination, ownership, 404 on missing
+
+**Layers:** L2, L3
+**SDE Standards:** #1 (DTO), #2 (pagination), #5 (exceptions)
+**Dependencies:** E3-T2
+
+---
+
+### E3-T9: Epic 3 Walkthrough + Journal
+
+**Dependencies:** All E3 tasks
+
+---
+
+## Epic 4: The React Frontend
+
+**Capability:** Professional chat interface + system dashboard
+**Layers:** L1
+
+**Concepts to Master (Epic-level):**
+- React component lifecycle — useState, useEffect, custom hooks, when re-renders happen
+- SSE in the browser — `EventSource` API vs `fetch` with `ReadableStream`, how to read streaming tokens
+- TypeScript generics — how to type API responses, why `any` is banned
+- Vite proxy — how the dev server forwards API calls to the backend, why CORS is avoided in dev
+
+---
+
+### E4-T1: Initialize React App
+
+**Goal:** Vite + React 18 + TypeScript project in `frontend/` directory, separate from Spring Boot.
+
+**Instructions:**
+1. `npx -y create-vite@latest frontend --template react-ts`
+2. Install dependencies: axios (or fetch), react-router-dom
+3. Configure proxy to Spring Boot backend (vite.config.ts: proxy `/api` → `localhost:8080`)
+4. Create basic folder structure: `components/`, `pages/`, `hooks/`, `services/`, `types/`
+
+**Layers:** L1
+**Dependencies:** None
+
+---
+
+### E4-T2: Chat Interface with SSE Streaming
+
+**Goal:** ChatGPT-style interface that streams tokens in real-time.
+
+**Components to create:**
+- `ChatPage.tsx` — Main chat view with message list and input
+- `MessageBubble.tsx` — Individual message (user/assistant), shows domain badge
+- `StreamingMessage.tsx` — Renders tokens as they arrive via SSE
+- `ChatInput.tsx` — Text input with send button
+- `useChatStream.ts` — Custom hook that POSTs to `/api/v1/chat` and reads SSE events
+- `DomainBadge.tsx` — Color-coded indicator showing which agent handled the response
+
+**Layers:** L1
+**Dependencies:** E3-T7 (ChatController must exist), E4-T1
+
+---
+
+### E4-T3: Conversation Sidebar + History
+
+**Goal:** Left sidebar showing conversation list, click to load history.
+
+**Components:**
+- `ConversationList.tsx` — Paginated list from `GET /api/v1/conversations`
+- `ConversationItem.tsx` — Single conversation preview (title, last domain, timestamp)
+
+**Layers:** L1
+**Dependencies:** E3-T8 (ConversationController), E4-T2
+
+---
+
+### E4-T4: Admin Dashboard
+
+**Goal:** Metrics overview for admins — domain hit distribution, routing latency, token usage.
+
+**Components:**
+- `DashboardPage.tsx` — Grid layout with metric cards
+- `DomainChart.tsx` — Pie/bar chart showing domain usage
+- `LatencyChart.tsx` — Line chart showing routing P50/P99
+- `SystemStatus.tsx` — Health indicator for DB, Redis, Ollama, DJL
+
+**Layers:** L1
+**Dependencies:** Analytics API endpoints (Epic 7+)
+
+---
+
+### E4-T5: Polish — Dark Mode, Responsive, Animations
+
+**Goal:** Make the UI feel premium.
+
+**Layers:** L1
+**Dependencies:** E4-T2, E4-T3
+
+---
+
+### E4-T6: Nginx Dockerfile + Docker Compose Integration
+
+**Goal:** Build React into static files, serve via Nginx, add to docker-compose.
+
+**Files to create:**
+- `frontend/Dockerfile` — Multi-stage: node build → nginx:alpine serve
+- `frontend/nginx.conf` — Proxy `/api/*` to Spring Boot backend
+
+**Files to modify:**
+- `docker-compose.yml` — Add frontend service
+
+**Layers:** L1, L5
+**Dependencies:** E4-T5
+
+---
+
+## Epic 5: Auth & Permissions
+
+**Capability:** OAuth2 login, JWT tokens, role-based access
+**Layers:** L4, L8, L9
+
+**Concepts to Master (Epic-level):**
+- OAuth2 Authorization Code Flow — the 4-step dance (redirect → GitHub login → callback with code → exchange code for token), why the code exchange happens server-side
+- JWT structure — header.payload.signature, what goes in each, why the server doesn't need a database lookup to validate
+- Spring Security filter chain — how filters are ordered, what `SecurityContext` holds, how `@PreAuthorize` works
+- CORS — what Same-Origin Policy is, why browsers block cross-origin requests, how the preflight OPTIONS request works
+- Distributed rate limiting — why in-memory rate limiting breaks with multiple K8s pods, how Redis + Bucket4j solves this
+
+---
+
+### E5-T1: Users Table + OAuth2 GitHub Login
+
+**Files to create:**
+- `src/main/resources/db/migration/V4__users.sql` — CREATE TABLE users (matches spec schema)
+- `src/main/java/com/cairn/security/User.java` — JPA entity
+- `src/main/java/com/cairn/security/UserRepository.java`
+- `src/main/java/com/cairn/security/OAuth2UserService.java` — Custom `DefaultOAuth2UserService` that creates/updates User in DB on GitHub login
+- `src/main/java/com/cairn/security/SecurityConfig.java` — `@EnableWebSecurity`, OAuth2 login config, CORS, CSRF disabled (stateless JWT)
+- `src/main/java/com/cairn/security/dto/UserDto.java`
+
+**Layers:** L4, L8
+**Dependencies:** None
+
+---
+
+### E5-T2: JWT Token Issuance + Validation
+
+**Files to create:**
+- `src/main/java/com/cairn/security/JwtService.java` — Generate/validate JWT with userId, role, expiration
+- `src/main/java/com/cairn/security/JwtAuthenticationFilter.java` — `OncePerRequestFilter` that extracts JWT from `Authorization: Bearer` header, validates, sets `SecurityContext`
+- `src/main/java/com/cairn/security/CairnJwtProperties.java` — `@ConfigurationProperties(prefix = "cairn.jwt")`: secret, expirationMs
+
+**Layers:** L4, L8
+**SDE Standards:** #3 (ConfigurationProperties)
+**Dependencies:** E5-T1
+
+---
+
+### E5-T3: Role-Based Access + User Endpoints
+
+**Files to create:**
+- `src/main/java/com/cairn/security/UserController.java` — `GET /api/v1/users/me`, `GET /api/v1/admin/users` (ADMIN), `PUT /api/v1/admin/users/{id}/role` (ADMIN)
+- `src/main/java/com/cairn/security/UserService.java`
+- `src/main/java/com/cairn/security/RequiresRole.java` — Custom annotation **(SDE Standard #4 bonus)**
+- `src/main/java/com/cairn/security/RoleCheckAspect.java` — AOP that enforces `@RequiresRole`
+
+**Layers:** L4, L8
+**SDE Standards:** #4 (AOP annotation)
+**Dependencies:** E5-T2
+
+---
+
+### E5-T4: Redis-Backed Distributed Rate Limiting
+
+**Goal:** Upgrade from in-memory to Redis-backed, per-user (not per-IP).
+
+**Files to modify:**
+- `src/main/java/com/cairn/security/RateLimitFilter.java` — Replace `ConcurrentHashMap` with Redis-backed Bucket4j. Rate limit by userId (from JWT) instead of IP.
+
+**Layers:** L8, L9, L10
+**Dependencies:** E5-T2 (JWT provides userId)
+
+---
+
+### E5-T5: CORS, CSP Headers, Input Sanitization
+
+**Files to modify:**
+- `src/main/java/com/cairn/security/SecurityConfig.java` — Add CORS config (allow frontend origin), Content-Security-Policy headers, X-Content-Type-Options, X-Frame-Options
+
+**Layers:** L8
+**Dependencies:** E5-T1
+
+---
+
+## Epic 6: Agentic Tools
+
+**Capability:** LLM function calling with HITL approval
+**Layers:** L2, L3, L8
+
+**Concepts to Master (Epic-level):**
+- LLM Function Calling — how the LLM outputs structured JSON instead of text, how Spring AI intercepts `function_call` responses, how tools are registered
+- State machine design — what makes a transition legal vs illegal, why enforcing transitions prevents bugs, how to represent transitions as a directed graph
+- Factory Pattern — why `new Tool()` inside business logic is bad, how a factory decouples creation from usage
+- Human-in-the-loop (HITL) — why autonomous AI tool execution is dangerous, how the approval queue works as an async workflow
+
+---
+
+### E6-T1: Tool Executions Table + State Machine
+
+**Files to create:**
+- `src/main/resources/db/migration/V5__tool_executions.sql`
+- `src/main/java/com/cairn/tools/ToolExecution.java` — JPA entity
+- `src/main/java/com/cairn/tools/ToolStatus.java` — Enum: PENDING_APPROVAL, APPROVED, EXECUTED, FAILED, REJECTED
+- `src/main/java/com/cairn/tools/ToolStateMachine.java` — Enforces legal transitions. `transition(current, target)` throws `IllegalStateTransitionException` on invalid transitions **(SDE Standard #8)**
+- `src/main/java/com/cairn/tools/ToolExecutionRepository.java`
+- `src/test/java/com/cairn/tools/ToolStateMachineTest.java` — Tests all valid and invalid transitions
+
+**Layers:** L2, L3
+**SDE Standards:** #8 (state machine)
+**Dependencies:** E3-T1 (exception hierarchy)
+
+---
+
+### E6-T2: Tool Registry + Execution Engine
+
+**Files to create:**
+- `src/main/java/com/cairn/tools/Tool.java` — Interface: `String getName()`, `boolean requiresApproval()`, `ToolResult execute(Map<String, Object> params)`
+- `src/main/java/com/cairn/tools/ToolFactory.java` — Finds the correct Tool implementation by name **(Factory Pattern)**
+- `src/main/java/com/cairn/tools/ToolExecutionService.java` — Orchestrates: receive function_call → check approval requirement → if needed, save as PENDING → if safe, execute immediately → save result
+- `src/main/java/com/cairn/tools/impl/SearchDocumentsTool.java` — Safe tool, auto-executes
+- `src/main/java/com/cairn/tools/impl/CheckHealthTool.java` — Safe tool, auto-executes
+- `src/main/java/com/cairn/tools/impl/ExecuteSqlTool.java` — Requires approval for write queries
+
+**Layers:** L2
+**Dependencies:** E6-T1
+
+---
+
+### E6-T3: HITL Approval API
+
+**Files to create:**
+- `src/main/java/com/cairn/tools/ToolApprovalController.java` — `GET /api/v1/tools/approvals` (ADMIN, paginated), `POST .../approve`, `POST .../reject`, `GET /api/v1/tools/executions` (audit log)
+- `src/main/java/com/cairn/tools/dto/ToolExecutionDto.java`
+- `src/main/java/com/cairn/tools/dto/ApprovalRequest.java`
+
+**Layers:** L2, L8
+**SDE Standards:** #1 (DTO), #2 (pagination), #8 (state machine enforced)
+**Dependencies:** E6-T2, E5-T3 (ADMIN role)
+
+---
+
+## Epic 7: Observability & Resilience
+
+**Capability:** Metrics, tracing, circuit breakers, health checks
+**Layers:** L12, L13, L9
+
+**Concepts to Master (Epic-level):**
+- Observability pillars — Metrics (counters, gauges, timers), Traces (distributed request tracking), Logs (structured JSON) — how they work together, why you need all 3
+- Circuit breaker pattern — the 3 states (CLOSED, OPEN, HALF-OPEN), how failure rate triggers state changes, why this prevents cascade failure
+- Prometheus pull model — why Prometheus scrapes endpoints instead of receiving pushes, how `/actuator/prometheus` exposes metrics
+- `@Scheduled` — how Spring's task scheduler works, cron expression syntax, what happens if a job takes longer than the interval
+
+---
+
+### E7-T1: Micrometer Custom Metrics
+
+**Goal:** Instrument routing latency, cache hit rates, LLM token usage, tool execution counts.
+
+**Files to create:**
+- `src/main/java/com/cairn/observability/CairnMetrics.java` — Centralized metrics registration: timers for routing, LLM calls; counters for cache hits, tool executions; gauges for loaded model name
+
+**Layers:** L12
+**Dependencies:** E3-T5 (routing + agents exist)
+
+---
+
+### E7-T2: Distributed Tracing (Zipkin)
+
+**Files to modify:**
+- `pom.xml` — Add `micrometer-tracing-bridge-brave` + `zipkin-reporter-brave`
+- `docker-compose.yml` — Add Zipkin container
+- `src/main/resources/application.yml` — Configure trace sampling rate
+
+**Layers:** L12
+**Dependencies:** None
+
+---
+
+### E7-T3: Resilience4j Circuit Breakers
+
+**Files to create:**
+- `src/main/java/com/cairn/model/ResilientOllamaClient.java` — Wraps Ollama calls with `@CircuitBreaker(name = "ollama")` and `@Retry`
+- `src/main/resources/application.yml` — Resilience4j config: failure rate threshold, wait duration, retry attempts
+
+**Files to modify:**
+- `pom.xml` — Add `resilience4j-spring-boot3`
+
+**Layers:** L13
+**Dependencies:** E3-T6 (Ollama integration exists)
+
+---
+
+### E7-T4: Prometheus + Grafana Stack
+
+**Files to create:**
+- `infra/prometheus/prometheus.yml` — Scrape config for Spring Boot actuator
+- `infra/grafana/dashboards/cairn-overview.json` — Pre-provisioned dashboard: routing latency, domain distribution, cache hit rate, error rate
+- `infra/grafana/provisioning/datasources.yml` — Auto-configure Prometheus datasource
+
+**Files to modify:**
+- `docker-compose.yml` — Add Prometheus + Grafana containers
+- `src/main/resources/application.yml` — Expose Prometheus actuator endpoint
+
+**Layers:** L12
+**Dependencies:** E7-T1
+
+---
+
+### E7-T5: Scheduled Cleanup Jobs
+
+**Files to create:**
+- `src/main/java/com/cairn/observability/CleanupScheduler.java` — `@Scheduled(cron = "0 0 3 * * *")` daily at 3 AM: purge orphaned document chunks, clean stale Redis keys, rotate old audit logs **(SDE Standard #7)**
+
+**Layers:** L2, L3
+**SDE Standards:** #7 (scheduled jobs)
+**Dependencies:** E6-T1 (tool_executions table exists)
+
+---
+
+## Epic 8: Infrastructure & Scaling
+
+**Capability:** Kubernetes, Helm, CI/CD, Kafka
+**Layers:** L5, L6, L7, L11
+
+**Concepts to Master (Epic-level):**
+- Kafka fundamentals — topics, partitions, consumer groups, offsets, why Kafka guarantees ordering within a partition but not across
+- KRaft mode — why ZooKeeper is being replaced, what the Raft consensus protocol does
+- Transactional Outbox Pattern — why publishing to Kafka AND writing to DB separately is dangerous (dual write), how the outbox solves it
+- Kubernetes primitives — Deployment vs StatefulSet, Service vs Ingress, ConfigMap vs Secret, what a Pod actually is
+- Helm — why raw K8s YAML is unmaintainable, how templates + values.yaml = configurable charts
+- HPA (Horizontal Pod Autoscaler) — how CPU metrics trigger pod scaling, what the scaling formula is
+- MinIO / S3 — object storage vs file storage vs block storage, why databases shouldn't store large files
+
+---
+
+### E8-T1: Kafka Integration
+
+**Files to create:**
+- `src/main/java/com/cairn/observability/KafkaEventPublisher.java` — Publishes `DomainRoutedEvent`, `ToolExecutedEvent`, `DocumentIngestedEvent` to Kafka topics
+- `src/main/java/com/cairn/observability/KafkaAuditConsumer.java` — Listens to `cairn.tool.executions`, logs to audit table
+
+**Files to modify:**
+- `pom.xml` — Add `spring-kafka`
+- `docker-compose.yml` — Add Kafka (KRaft mode, single node) container
+- `src/test/java/com/cairn/TestcontainersConfig.java` — Add Kafka Testcontainer
+
+**Layers:** L2, L7
+**Dependencies:** E3-T5 (events exist)
+
+---
+
+### E8-T2: Document Upload + MinIO + RAG Chunking
+
+**Files to create:**
+- `src/main/resources/db/migration/V6__documents_chunks.sql`
+- `src/main/java/com/cairn/routing/Document.java` — JPA entity
+- `src/main/java/com/cairn/routing/DocumentChunk.java` — JPA entity
+- `src/main/java/com/cairn/routing/DocumentRepository.java`
+- `src/main/java/com/cairn/routing/DocumentChunkRepository.java`
+- `src/main/java/com/cairn/routing/DocumentService.java` — Upload to MinIO, publish Kafka event, chunk and embed
+- `src/main/java/com/cairn/routing/DocumentController.java` — `POST /api/v1/documents` (multipart), `GET` (paginated), `DELETE`
+- `src/main/java/com/cairn/routing/dto/DocumentDto.java`
+
+**Files to modify:**
+- `pom.xml` — Add MinIO SDK
+- `docker-compose.yml` — Add MinIO container
+
+**Layers:** L2, L3
+**SDE Standards:** #1 (DTO), #2 (pagination)
+**Dependencies:** E2-T4 (LocalEmbeddingService), E8-T1 (Kafka)
+
+---
+
+### E8-T3: Domain Management API
+
+**Files to create:**
+- `src/main/java/com/cairn/routing/DomainController.java` — Full CRUD: `GET /domains`, `POST`, `PUT`, `DELETE` (soft), examples sub-resource
+- `src/main/java/com/cairn/routing/DomainService.java` — Business logic, auto-embed on create/update
+- `src/main/java/com/cairn/routing/dto/DomainDto.java`
+- `src/main/java/com/cairn/routing/dto/DomainExampleDto.java`
+- `src/main/java/com/cairn/routing/dto/CreateDomainRequest.java`
+
+**Layers:** L2
+**SDE Standards:** #1 (DTO), #2 (pagination), #9 (@Cacheable on domain lookups)
+**Dependencies:** E2-T5, E5-T3 (ADMIN role)
+
+---
+
+### E8-T4: Kubernetes Manifests + Helm Chart
+
+**Files to create:**
+- `infra/k8s/` — Raw manifests: Deployment, Service, Ingress, ConfigMap, Secret for each service
+- `infra/helm/cairn/Chart.yaml`, `values.yaml`, `templates/` — Helm chart packaging all manifests with configurable values
+- `infra/helm/cairn/templates/deployment-backend.yaml`
+- `infra/helm/cairn/templates/deployment-frontend.yaml`
+- `infra/helm/cairn/templates/statefulset-postgres.yaml`
+- `infra/helm/cairn/templates/hpa.yaml` — HorizontalPodAutoscaler for backend
+
+**Layers:** L5, L11
+**Dependencies:** E4-T6 (frontend Dockerfile), E3-T7 (backend works)
+
+---
+
+### E8-T5: CD Pipeline — Auto-Deploy on Main Merge
+
+**Files to modify:**
+- `.github/workflows/ci.yml` — Add deploy job: on push to main, build Docker image, push to registry, deploy to Railway (or apply Helm chart to K8s)
+
+**Layers:** L7
+**Dependencies:** E8-T4
+
+---
+
+### E8-T6: Analytics API
+
+**Files to create:**
+- `src/main/java/com/cairn/observability/AnalyticsController.java` — `GET /api/v1/analytics/routing` (domain distribution, avg latency), `GET /api/v1/analytics/usage` (tokens per user/domain/period). Uses native JPA queries with GROUP BY, JOINs, date filtering **(SDE Standard #10)**
+- `src/main/java/com/cairn/observability/dto/RoutingAnalyticsDto.java`
+- `src/main/java/com/cairn/observability/dto/UsageAnalyticsDto.java`
+
+**Layers:** L2, L3
+**SDE Standards:** #10 (complex query), #1 (DTO), #2 (pagination)
+**Dependencies:** E3-T2 (messages table with token_count), E5-T3 (ADMIN role)
+
+---
+
+## Epic 9: The Custom ML Pipeline (Python)
+
+**Capability:** Hand-written Llama-3 architecture + LoRA + training + GGUF export
+**Layers:** L6
+
+**Concepts to Master (Epic-level):**
+- Transformer architecture — attention mechanism (Q, K, V), why softmax(QK^T/√d)V works, what each dimension represents
+- RoPE (Rotary Position Encoding) — why position matters, how rotation matrices encode position, why this is better than absolute position embeddings
+- GQA (Grouped Query Attention) — why fewer KV heads saves memory, how 8 query heads can share 4 KV heads
+- SwiGLU activation — what gating does, why SwiGLU outperforms ReLU in Transformers
+- RMSNorm — why LayerNorm has unnecessary parameters, what RMSNorm simplifies
+- LoRA — the math of ΔW = B×A, why rank-16 captures enough information, what freezing the base weights achieves
+- LoRA Fusion (our novelty) — how to linearly combine two adapters, why weighted merging works for ambiguous routing
+- GGUF quantization — what 4-bit quantization means at the weight level, how Q4_K_M clusters weights, why accuracy loss is small
+
+---
+
+### E9-T1: `model.py` — Llama-3 Architecture From Scratch
+
+**Goal:** Pure PyTorch implementation of Transformer: RMSNorm, RoPE, GQA, SwiGLU, CausalSelfAttention, TransformerBlock, Llama3Model. Validated against HuggingFace output.
+
+### E9-T2: `loader.py` — Weight Loading
+
+**Goal:** Map HuggingFace safetensors keys to our architecture. Verify by comparing output with HF model on same input.
+
+### E9-T3: `lora.py` — LoRA Injection + LoRA Fusion
+
+**Goal:** Inject A, B matrices into q_proj and v_proj. Implement `merge_lora_weights()` for export AND `fuse_lora_adapters(adapters, weights)` for multi-domain fusion on ambiguous routing. **(This is our novelty.)**
+
+### E9-T4: `train.py` — Training Loop
+
+**Goal:** PyTorch training loop with gradient accumulation, mixed precision, WandB logging. Trains on domain-specific datasets.
+
+### E9-T5: `export.py` — Merge + GGUF Quantization
+
+**Goal:** Merge LoRA into base, save HF format, call `convert-hf-to-gguf` for 4-bit quantization.
+
+### E9-T6: Ollama Integration — Register Models
+
+**Goal:** Create Modelfiles for each domain, register with Ollama, test from Spring Boot.
+
+---
+
+## Epic 10: Testing, Documentation & Polish
+
+**Capability:** Load testing, chaos testing, architecture diagrams, README
+**Layers:** L2, L7, L11, L12, L13
+
+**Concepts to Master (Epic-level):**
+- Load testing methodology — what P50, P95, P99 latency means, why P99 matters more than average, how to interpret k6 output
+- Chaos engineering — why intentionally breaking things in test proves resilience, what the Simian Army concept is
+- Spring Modulith verification — how `@ApplicationModuleTest` enforces module boundaries, what happens when module A directly calls module B's internals
+- `@Cacheable` / `@CacheEvict` — how Spring's cache abstraction works, the proxy-based interception, why self-invocation skips the cache
+
+---
+
+### E10-T1: Load Testing with k6
+
+**Goal:** k6 script targeting `/api/v1/chat` (mocked LLM) at 500 concurrent users. Assert P99 routing latency < 100ms.
+
+### E10-T2: Chaos Testing
+
+**Goal:** Kill Redis mid-request → verify graceful degradation. Kill Ollama → verify circuit breaker opens.
+
+### E10-T3: Architecture Diagrams (Mermaid)
+
+**Goal:** Request lifecycle diagram, module boundary diagram, deployment topology diagram. Embedded in README.
+
+### E10-T4: Spring Cacheable Integration
+
+**Goal:** Add `@Cacheable("domains")` to domain lookups, `@CacheEvict` on domain updates. **(SDE Standard #9)**
+
+### E10-T5: Spring Modulith Event Verification
+
+**Goal:** Add `@ApplicationModuleTest` to verify module boundaries and event contracts are enforced.
+
+### E10-T6: Professional README
+
+**Goal:** Badges (build status, coverage), architecture diagram, tech stack table, quick-start guide, screenshots/GIFs of the chat UI and dashboard.
+
+### E10-T7: Final Walkthrough
+
+**Goal:** Complete `walkthrough_final.md` documenting the entire project journey.
+
+---
+
+## Dependency Graph (Execution Order)
+
+```
+Phase 1 — Make It Work:
+  E2-T4 → E2-T5 → E2-T6 → E2-T7 → E2-T8
+  E3-T1 ──┬── E3-T2 → E3-T5 → E3-T7 → E3-T8 → E3-T9
+          ├── E3-T3 → E3-T6 ─┘
+          └── E3-T4
+
+Phase 2 — Make It Visible:
+  E4-T1 → E4-T2 → E4-T3 → E4-T4 → E4-T5 → E4-T6
+
+Phase 3 — Make It Secure:
+  E5-T1 → E5-T2 → E5-T3 → E5-T4 → E5-T5
+
+Phase 4 — Make It Smart:
+  E6-T1 → E6-T2 → E6-T3
+
+Phase 5 — Make It Observable:
+  E7-T1 → E7-T2 → E7-T3 → E7-T4 → E7-T5
+
+Phase 6 — Make It Scalable:
+  E8-T1 → E8-T2 → E8-T3 → E8-T4 → E8-T5 → E8-T6
+
+Phase 7 — Make It Intelligent (Parallel):
+  E9-T1 → E9-T2 → E9-T3 → E9-T4 → E9-T5 → E9-T6
+
+Phase 8 — Prove It Works:
+  E10-T1 → E10-T2 → E10-T3 → E10-T4 → E10-T5 → E10-T6 → E10-T7
+```
+
+**Parallelizable:** Epic 9 (Python ML) can run alongside Epics 3-8 (Java backend). Epic 4 (React) can start as soon as E3-T7 exists.
+
+---
+
+## 15. Teaching Protocol (Full Reference)
+
+This protocol governs ALL learning interactions during task execution.
+
+### Core Principle
+
+**The session is NOT complete when the explanation is finished. The session is complete only when the learner has demonstrated understanding.**
+
+### The 9-Stage Teaching Flow
+
+For every concept in a task's "Concepts to Master" list:
+
+| Stage | Name | What Happens | Gate |
+|-------|------|-------------|------|
+| 0 | **Diagnose** | Ask what the learner already knows. Identify gaps. | Learner states current understanding |
+| 1 | **Frame the Problem** | Explain WHAT the problem is and WHY it's non-trivial | Learner restates the problem |
+| 2 | **Baseline / Naive** | Show the obvious first approach and why it fails | Learner identifies the flaw |
+| 3 | **Key Insight** | Lead to the non-obvious idea that makes the solution work | Learner explains the insight back |
+| 4 | **Full Mechanics** | Step-by-step how the solution works | Learner walks through steps |
+| 5 | **Concrete Example** | Work through a real example end-to-end | Learner predicts intermediate steps |
+| 6 | **Edge Cases** | What could go wrong, boundary conditions | Learner reasons through edge cases |
+| 7 | **Tradeoffs** | Why this over alternatives, what we sacrifice | Learner compares approaches |
+| 8 | **Verify** | Learner explains the full concept from scratch | Confirmed understanding |
+
+### Rules for the Executor (Gemini / Any Model)
+
+1. **NEVER dump all information at once.** Break into stages. Wait for learner response.
+2. **NEVER move on if understanding is weak.** Repair first. Use different analogies.
+3. **Prioritize WHY over WHAT.** The learner must know WHY a design choice was made, not just what it is.
+4. **Force active participation.** Ask the learner to restate, predict, compare, debug.
+5. **Do not fake progress.** If the learner's answer is vague, say so.
+6. **Use both high-level intuition AND low-level details.** Abstract mental models + concrete code.
+7. **Connect every detail to the bigger picture.** "This AOP annotation matters because..."
+
+### Question Types to Use
+
+| Type | Example |
+|------|---------|
+| Open-ended | "In your own words, why does the circuit breaker pattern exist?" |
+| Why | "Why can't we just retry infinitely instead of opening the circuit?" |
+| What-if | "What happens if Redis goes down while a rate limit check is in progress?" |
+| Prediction | "If I send 2 requests to the same endpoint 1ms apart, what does the rate limiter return?" |
+| Compare | "How is @Cacheable different from manually calling Redis in your service?" |
+| Debug | "This code has a thread-safety bug. Can you spot it?" |
+| Edge case | "What happens when the conversation has 0 messages and we try to load context?" |
+
+### When Teaching Code / DSA / Algorithms
+
+1. Do NOT immediately dump final code
+2. First build: problem → brute force → key insight → algorithm → dry run → edge cases → complexity
+3. While teaching code, ask the learner to: trace variables, predict output, find bugs, justify conditions, explain complexity
+4. Connect the code back to the IDEA, not just syntax
+
+### When Teaching Systems / Architecture
+
+Make sure the learner understands:
+- The problem being solved
+- Each component/module and its role
+- The flow of data through the system
+- Design choices and tradeoffs
+- What would happen if a component were removed or changed
+- Where the method is strong vs weak
+
+### Non-Negotiable Final Rule
+
+> **Your job is not to finish the explanation. Your job is to verify that the learner now understands the material. Do not end the teaching session until the learner has demonstrated understanding through explanation, reasoning, answering questions, or applying the concept.**
+
+---
+
+> [!IMPORTANT]
+> **This execution plan is ready for review.**
+> - Every task has file-level instructions, layer coverage, and SDE compliance
+> - Every Epic has a **Concepts to Master** list
+> - The gate system includes a **mandatory LEARN phase** before coding
+> - The full **Teaching Protocol** (Section 15) governs all learning interactions
+> - The dependency graph shows what can run in parallel
+>
+> Once approved, execution starts from E2-T4.

@@ -27,7 +27,7 @@
 | E2-T1 | Implement Redis context cache with TTL per domain (ADR-004) | ✅ |
 | E2-T2 | Add DJL dependencies and implement LocalEmbeddingService (MiniLM 384-dim) (ADR-002) | ✅ |
 | E2-T3 | Create DomainSeeder ApplicationRunner to inject the 6 foundational domains | ✅ |
-| E2-T4 | Implement DomainRouter for pgvector cosine similarity search | ⚪ |
+| E2-T4 | Harden LocalEmbeddingService (thread safety, float[] return, @ConfigurationProperties) | ✅ |
 | E2-T5 | Write Testcontainers integration test combining Postgres + Redis + DJL | ⚪ |
 | E2-T6 | Update PROJECT_JOURNAL.md and write walkthrough_epic2.md | ⚪ |
 

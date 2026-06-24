@@ -104,6 +104,16 @@ management:
       # the endpoint directly — not exposed in any UI.
       show-details: always
 
+# ── Cairn Embedding (E2-T4) ───────────────────────────────────────
+# WHY: Type-safe config for the local DJL embedding model.
+# Bound to CairnEmbeddingProperties via @ConfigurationProperties (SDE Standard #3).
+# Externalized so model can be swapped (e.g. to all-MiniLM-L12-v2) without code changes.
+cairn:
+  embedding:
+    model-url: djl://ai.djl.huggingface.pytorch/sentence-transformers/all-MiniLM-L6-v2
+    engine: PyTorch
+    dimensions: 384
+
 # ── Server ────────────────────────────────────────────────────────
 server:
   # WHY: Railway sets PORT env var. Locally defaults to 8080 (ADR-005, Rule 14).

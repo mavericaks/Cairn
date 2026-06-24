@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 /**
  * Entry point for the Cairn AI orchestration platform.
@@ -17,10 +18,15 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * component scan root. Spring Modulith relies on this convention to discover and enforce module
  * boundaries.
  *
+ * <p>WHY: {@code @ConfigurationPropertiesScan} auto-discovers all @ConfigurationProperties classes
+ * across all modules. Without this, Spring cannot bind YAML to our type-safe config classes (like
+ * CairnEmbeddingProperties).
+ *
  * @author Cairn Team
  * @see <a href="https://docs.spring.io/spring-modulith/reference/">Spring Modulith Reference</a>
  */
 @SpringBootApplication
+@ConfigurationPropertiesScan
 public class CairnApplication {
 
   private static final Logger log = LoggerFactory.getLogger(CairnApplication.class);

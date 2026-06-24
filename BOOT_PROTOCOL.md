@@ -73,7 +73,9 @@ Boot file  : BOOT_PROTOCOL.md ✅ read
 ### STEP 2 — Read project state files in this exact order
 1. `PROJECT_JOURNAL.md` — decisions, architecture, session log
 2. `task.md` — active Epic and task board
-3. `WORKSPACE_RULES.md` — operating contract
+3. `WORKSPACE_RULES.md` — operating contract (13 rules)
+4. `cairn_technical_specification.md` — complete tech spec (schema, APIs, stack, data flows)
+5. `PROMPTING_GUIDE.md` — session workflow, gate system, teaching protocol
 
 If any file is missing: **STOP. Tell the user. Do not proceed.**
 

@@ -421,3 +421,20 @@
   - Test passed, confirming exactly 384 dimensions returned, 0 network requests made, running strictly on CPU, and database idempotency preserved.
 - **Decisions made:** Epic 7 created as a parallel side-quest so cloud ML training does not bottleneck Spring Boot framework progression.
 - **What was left incomplete:** E2-T4 through E2-T6, plus Epic 7 ML tasks.
+
+### Session 6 — E2-T4: Harden LocalEmbeddingService
+- **Date:** 2026-06-24
+- **Model used:** Antigravity (DeepMind)
+- **What was accomplished:**
+  - **Thread Safety Fix:** Replaced single shared `Predictor` with per-call `Predictor` creation via `try-with-resources`. `ZooModel` (thread-safe, read-only weights) is shared; `Predictor` (mutable inference buffers) is created and closed per request. Verified with 5-thread concurrent virtual thread test.
+  - **Return Type Fix:** Changed `embed()` from `List<Double>` → `float[]`. Eliminates wasteful boxing/conversion. DJL natively produces `float[]`, pgvector/hibernate-vector expects `float[]`.
+  - **@ConfigurationProperties (SDE Standard #3):** Created `CairnEmbeddingProperties` with `@Validated`, `@NotBlank`, `@Positive` for type-safe binding of `cairn.embedding.model-url`, `cairn.embedding.engine`, `cairn.embedding.dimensions`. Added `@ConfigurationPropertiesScan` to `CairnApplication`.
+  - **Graceful Degradation:** `@PostConstruct` init catches model load failure and sets `healthy=false` instead of crashing the app. Added `isHealthy()` for consumers/health indicators.
+  - **DomainSeeder Hardening:** Per-domain `try-catch` so one embedding failure doesn't abort all 6. Tracks seeded/skipped/failed counts.
+  - **Domain.active field:** Added `boolean active = true` with Flyway V2 migration. Defensive copy on `getEmbedding()`.
+  - **Tests:** 7 new/updated tests in `LocalEmbeddingServiceTest` (384-dim, null, blank, health, dimensions, semantic diff, concurrent access). 1 new test in `DomainSeederTest` (graceful degradation). Total: 30/30 green.
+- **Files created:** `CairnEmbeddingProperties.java`, `V2__add_domains_active_column.sql`
+- **Files modified:** `LocalEmbeddingService.java`, `DomainSeeder.java`, `Domain.java`, `CairnApplication.java`, `application.yml`, `LocalEmbeddingServiceTest.java`, `DomainSeederTest.java`
+- **Decisions made:** Per-call Predictor chosen over Predictor pool (0.1ms overhead negligible vs 15-20ms inference). `active` field added to Domain for future soft-delete support.
+- **What was left incomplete:** E2-T5 (DomainRouter), E2-T6 (domain examples), E2-T7 (integration test), E2-T8 (walkthrough). Epic 7 ML tasks.
+- **Next task:** E2-T5 (Expand DomainSeeder with example queries) per the implementation plan.

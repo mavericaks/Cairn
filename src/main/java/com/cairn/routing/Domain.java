@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -33,6 +34,11 @@ public class Domain {
 
   @Column(columnDefinition = "TEXT")
   private String description;
+
+  // WHY: Domains can be soft-deleted (set active=false) without losing data.
+  // The DomainRouter only searches active domains.
+  @Column(nullable = false)
+  private boolean active = true;
 
   // WHY: Maps the PostgreSQL vector(384) column natively to a float[] using hibernate-vector.
   @Column(nullable = false, columnDefinition = "vector(384)")
@@ -69,8 +75,18 @@ public class Domain {
     return description;
   }
 
+  public boolean isActive() {
+    return active;
+  }
+
+  /**
+   * Returns a defensive copy of the embedding array.
+   *
+   * <p>WHY: Prevents callers from accidentally mutating the internal state of this entity.
+   * Defensive copies are a standard Java encapsulation practice.
+   */
   public float[] getEmbedding() {
-    return embedding;
+    return embedding != null ? Arrays.copyOf(embedding, embedding.length) : null;
   }
 
   public OffsetDateTime getCreatedAt() {
@@ -92,6 +108,10 @@ public class Domain {
 
   public void setDescription(String description) {
     this.description = description;
+  }
+
+  public void setActive(boolean active) {
+    this.active = active;
   }
 
   public void setEmbedding(float[] embedding) {
