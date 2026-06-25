@@ -438,3 +438,17 @@
 - **Decisions made:** Per-call Predictor chosen over Predictor pool (0.1ms overhead negligible vs 15-20ms inference). `active` field added to Domain for future soft-delete support.
 - **What was left incomplete:** E2-T5 (DomainRouter), E2-T6 (domain examples), E2-T7 (integration test), E2-T8 (walkthrough). Epic 7 ML tasks.
 - **Next task:** E2-T5 (Expand DomainSeeder with example queries) per the implementation plan.
+
+### Session 7 — E2-T5: Expand DomainSeeder with Example Queries
+- **Date:** 2026-06-25
+- **Model used:** Antigravity (DeepMind)
+- **What was accomplished:**
+  - **HNSW Indexing:** Created `V3__domain_examples.sql` to build the `domain_examples` table with a `vector(384)` column and an `hnsw (vector_cosine_ops)` index for highly accurate, scalable semantic search.
+  - **JPA Entities:** Built the `DomainExample` entity mapped with `@ManyToOne` to `Domain`, and created `DomainExampleRepository`.
+  - **Dynamic Seeding:** Upgraded `DomainSeeder` to inject exactly 10 few-shot routing examples per domain (60 total) sourced from the `domain_data_strategy.md`.
+  - **Test Coverage:** Updated `DomainSeederTest` to verify that 66 total embeddings are calculated (6 descriptions + 60 examples) and saved on a fresh run, while maintaining idempotency and graceful degradation on failures. Spotless format issues were resolved.
+- **Files created:** `V3__domain_examples.sql`, `DomainExample.java`, `DomainExampleRepository.java`
+- **Files modified:** `Domain.java`, `DomainRepository.java`, `DomainSeeder.java`, `DomainSeederTest.java`
+- **Decisions made:** We chose HNSW over IVFFlat because HNSW does not require a pre-populated table for index training, and provides ~99% recall accuracy which is mission-critical for few-shot semantic intent routing.
+- **What was left incomplete:** E2-T6 (DomainRouter), E2-T7 (integration test), E2-T8 (walkthrough).
+- **Next task:** E2-T6 (Implement DomainRouter).

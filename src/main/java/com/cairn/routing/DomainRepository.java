@@ -1,5 +1,6 @@
 package com.cairn.routing;
 
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -20,4 +21,12 @@ public interface DomainRepository extends JpaRepository<Domain, UUID> {
    * @return True if the domain already exists in the database.
    */
   boolean existsByName(String name);
+
+  /**
+   * WHY: Fetch a domain by its unique name to append examples if they are missing.
+   *
+   * @param name The domain name.
+   * @return The Domain if found.
+   */
+  Optional<Domain> findByName(String name);
 }

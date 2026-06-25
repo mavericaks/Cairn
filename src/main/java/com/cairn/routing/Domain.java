@@ -1,13 +1,17 @@
 package com.cairn.routing;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -53,6 +57,12 @@ public class Domain {
   @Column(name = "updated_at", nullable = false)
   private OffsetDateTime updatedAt;
 
+  // WHY: Bidirectional relationship mapped by the 'domain' field in DomainExample.
+  // CascadeType.ALL ensures examples are saved/deleted with the domain.
+  // orphanRemoval=true deletes examples if they are removed from the list.
+  @OneToMany(mappedBy = "domain", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<DomainExample> examples = new ArrayList<>();
+
   // Constructors
   public Domain() {}
 
@@ -97,6 +107,10 @@ public class Domain {
     return updatedAt;
   }
 
+  public List<DomainExample> getExamples() {
+    return examples;
+  }
+
   // Setters
   public void setId(UUID id) {
     this.id = id;
@@ -124,5 +138,20 @@ public class Domain {
 
   public void setUpdatedAt(OffsetDateTime updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  public void setExamples(List<DomainExample> examples) {
+    this.examples = examples;
+  }
+
+  // Helper methods
+  public void addExample(DomainExample example) {
+    examples.add(example);
+    example.setDomain(this);
+  }
+
+  public void removeExample(DomainExample example) {
+    examples.remove(example);
+    example.setDomain(null);
   }
 }
