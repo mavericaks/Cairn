@@ -30,7 +30,7 @@
 | E2-T4 | Harden LocalEmbeddingService (thread safety, float[] return, @ConfigurationProperties) | ✅ |
 | E2-T5 | Expand DomainSeeder with Example Queries (Few-Shot pgvector indexing) | ✅ |
 | E2-T6 | Implement DomainRouter (Native pgvector HNSW search) | ✅ |
-| E2-T7 | Write Testcontainers integration test combining Postgres + Redis + DJL | ⚪ |
+| E2-T7 | Write Testcontainers integration test combining Postgres + Redis + DJL | ✅ |
 | E2-T8 | Update PROJECT_JOURNAL.md and write walkthrough_epic2.md | ⚪ |
 
 ---
@@ -114,6 +114,7 @@
 | E2-T4 | Harden LocalEmbeddingService | 2026-06-24 | Thread safety fix, float[] return type, type-safe config binding, graceful degradation. |
 | E2-T5 | Expand DomainSeeder with Example Queries | 2026-06-25 | Created domain_examples table with HNSW index. Seeded 60 total example queries dynamically. Added relationships to Domain. |
 | E2-T6 | Implement DomainRouter | 2026-06-25 | Native pgvector cosine similarity search using <=> operator. Configured in-memory JPA fallback for graceful degradation on DB failure. |
+| E2-T7 | Write Testcontainers integration test | 2026-06-25 | End-to-end testing proving the full Epic 2 routing pipeline works: DJL embedding -> Postgres HNSW search -> Redis cache. |
 
 ---
 
