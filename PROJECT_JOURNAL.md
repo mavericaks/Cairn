@@ -452,3 +452,17 @@
 - **Decisions made:** We chose HNSW over IVFFlat because HNSW does not require a pre-populated table for index training, and provides ~99% recall accuracy which is mission-critical for few-shot semantic intent routing.
 - **What was left incomplete:** E2-T6 (DomainRouter), E2-T7 (integration test), E2-T8 (walkthrough).
 - **Next task:** E2-T6 (Implement DomainRouter).
+
+### Session 8 — E2-T6: Implement DomainRouter
+- **Date:** 2026-06-25
+- **Model used:** Antigravity (DeepMind)
+- **What was accomplished:**
+  - **Native pgvector Search:** Implemented `DomainRouter` leveraging a native SQL query (`<=>` operator) to find the nearest HNSW domain example in ~1-2ms.
+  - **Graceful Degradation:** Handled `pgvector` exceptions by falling back to an in-memory cosine similarity calculation in Java.
+  - **Custom Exceptions:** Created `DomainNotFoundException` mapped to HTTP 404 (SDE Standard #5).
+  - **Integration Testing:** Created `DomainRouterTest` utilizing Testcontainers. The test verifies that semantic routing works correctly across all active domains and correctly triggers exceptions when domains are soft-deleted.
+  - **Bug Fix:** Fixed a Postgres array syntax error (`{}` vs `[]`) during testing to ensure the primary query and fallback mechanism are robust.
+- **Files created:** `DomainRouter.java`, `RoutingResult.java`, `DomainNotFoundException.java`, `DomainRouterTest.java`
+- **Decisions made:** We chose to do the native query bypassing JPA to get C-level vector performance, but use JPA to fetch all rows into memory as a bulletproof fallback if the pgvector extension crashes.
+- **What was left incomplete:** E2-T7 (integration test), E2-T8 (walkthrough).
+- **Next task:** E2-T7 (Write Testcontainers integration test combining Postgres + Redis + DJL).
