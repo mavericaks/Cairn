@@ -1,7 +1,6 @@
-package com.cairn.routing;
+package com.cairn.model.exception;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  * Thrown when the vector search yields no valid domains (e.g., all domains inactive, or DB empty).
@@ -10,10 +9,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * generic RuntimeExceptions. If we can't find a domain, we cannot proceed with the chat flow,
  * resulting in a 404 Not Found at the API level.
  */
-@ResponseStatus(HttpStatus.NOT_FOUND)
-public class DomainNotFoundException extends RuntimeException {
+public class DomainNotFoundException extends CairnException {
 
   public DomainNotFoundException(String message) {
-    super(message);
+    super(message, HttpStatus.NOT_FOUND, "DOMAIN_NOT_FOUND");
   }
 }

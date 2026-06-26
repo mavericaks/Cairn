@@ -1,5 +1,7 @@
 package com.cairn.observability;
 
+import com.cairn.model.dto.ErrorResponse;
+import com.cairn.model.exception.CairnException;
 import java.net.URI;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -99,5 +101,30 @@ public class GlobalExceptionHandler {
     problemDetail.setType(URI.create("https://cairn.dev/errors/internal-server-error"));
 
     return problemDetail;
+  }
+
+  /**
+   * WHY: Handles all custom exceptions deriving from CairnException. Extracts the predefined HTTP
+   * status and error code to construct a standardized ErrorResponse.
+   *
+   * @param ex The specific CairnException
+   * @return ErrorResponse mapped to the correct HTTP status code
+   */
+  @ExceptionHandler(CairnException.class)
+  public org.springframework.http.ResponseEntity<ErrorResponse> handleCairnException(
+      CairnException ex, org.springframework.web.context.request.WebRequest request) {
+    log.warn("Cairn exception: {} - {}", ex.getErrorCode(), ex.getMessage());
+
+    String path = request.getDescription(false).replace("uri=", "");
+
+    ErrorResponse errorResponse =
+        new ErrorResponse(
+            java.time.Instant.now(),
+            ex.getHttpStatus().value(),
+            ex.getErrorCode(),
+            ex.getMessage(),
+            path);
+
+    return org.springframework.http.ResponseEntity.status(ex.getHttpStatus()).body(errorResponse);
   }
 }
