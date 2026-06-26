@@ -1,10 +1,13 @@
 package com.cairn;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
+import com.cairn.model.OllamaModelManager;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +18,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import static org.mockito.Mockito.when;
-import org.junit.jupiter.api.BeforeEach;
-import com.cairn.model.OllamaModelManager;
 
 /**
  * Smoke test: Verifies the Spring Boot application context loads successfully. (E1-T7)
