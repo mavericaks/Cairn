@@ -11,27 +11,28 @@
 
 | Field | Value |
 |-------|-------|
-| Epic Number | 2 |
-| Epic Title | The Semantic Kernel |
-| Capability | Local zero-cost semantic intent classification (DJL + pgvector) and Redis context caching |
-| Interview Story | "I built a semantic router that classifies intent in 15ms locally, completely bypassing the massive cost and latency of asking an LLM to decide which agent should handle the prompt." |
+| Epic Number | 3 |
+| Epic Title | The Chat API |
+| Capability | End-to-end chat pipeline with SSE streaming — user sends text, gets a streamed AI response |
+| Interview Story | "I orchestrated a multi-agent swarm using Java 21 Virtual Threads, ensuring high-throughput, non-blocking parallel execution across domain agents." |
 | Status | 🟢 ACTIVE |
-| Definition of Done | `SemanticKernelTests` integration test passes using Testcontainers, successfully embedding a prompt via DJL, finding the correct domain via pgvector, and caching the context in Redis. |
+| Definition of Done | `ChatController` streams SSE tokens back to the client after routing through the orchestrator to a specific agent. |
 
 ---
 
-## Epic 2 Task Board
+## Epic 3 Task Board
 
 | ID | Task | Status |
 |----|------|--------|
-| E2-T1 | Implement Redis context cache with TTL per domain (ADR-004) | ✅ |
-| E2-T2 | Add DJL dependencies and implement LocalEmbeddingService (MiniLM 384-dim) (ADR-002) | ✅ |
-| E2-T3 | Create DomainSeeder ApplicationRunner to inject the 6 foundational domains | ✅ |
-| E2-T4 | Harden LocalEmbeddingService (thread safety, float[] return, @ConfigurationProperties) | ✅ |
-| E2-T5 | Expand DomainSeeder with Example Queries (Few-Shot pgvector indexing) | ✅ |
-| E2-T6 | Implement DomainRouter (Native pgvector HNSW search) | ✅ |
-| E2-T7 | Write Testcontainers integration test combining Postgres + Redis + DJL | ✅ |
-| E2-T8 | Update PROJECT_JOURNAL.md and write walkthrough_epic2.md | ✅ |
+| E3-T1 | Core Exception Hierarchy + Base DTOs | ✅ |
+| E3-T2 | Conversation & Message Persistence | ⚪ |
+| E3-T3 | Spring Profiles + Configuration Properties | ⚪ |
+| E3-T4 | Custom AOP @Audited Annotation | ⚪ |
+| E3-T5 | Agent Interface + Orchestrator | ⚪ |
+| E3-T6 | Ollama Integration (Model Module) | ⚪ |
+| E3-T7 | ChatController + SSE Streaming | ⚪ |
+| E3-T8 | Conversation Management API | ⚪ |
+| E3-T9 | Epic 3 Walkthrough + Journal | ⚪ |
 
 ---
 
@@ -116,6 +117,7 @@
 | E2-T6 | Implement DomainRouter | 2026-06-25 | Native pgvector cosine similarity search using <=> operator. Configured in-memory JPA fallback for graceful degradation on DB failure. |
 | E2-T7 | Write Testcontainers integration test | 2026-06-25 | End-to-end testing proving the full Epic 2 routing pipeline works: DJL embedding -> Postgres HNSW search -> Redis cache. |
 | E2-T8 | Epic 2 Walkthrough | 2026-06-25 | Wrote comprehensive walkthrough detailing the architecture and SDE standards used in Epic 2. |
+| E3-T1 | Core Exception Hierarchy + Base DTOs | 2026-06-26 | Standardized exception framework with CairnException and base DTOs (ErrorResponse, PageResponse). Fixed Modulith boundaries. |
 
 ---
 
@@ -133,7 +135,7 @@
 
 | Epic | Title | Proposed | Approved |
 |------|-------|---------|----------|
-| 3 | The Agent Swarm | Session 0 | Pending |
+| 3 | The Agent Swarm | Session 0 | ✅ Active |
 | 4 | Observability | Session 0 | Pending |
 | 5 | Agentic Tools (Safe) | Session 0 | Pending |
 | 6 | Security Hardening | Session 0 | Pending |

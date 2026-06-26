@@ -490,3 +490,17 @@
 - **Decisions made:** We used the system artifact structure for the walkthrough to allow UI rendering while ensuring code-level artifacts (`PROJECT_JOURNAL.md` and `task.md`) remained up to date. Epic 2 is now closed.
 - **What was left incomplete:** Nothing for Epic 2.
 - **Next task:** Epic 3 (The Agent Swarm) - E3-T1.
+
+### Session 11 — E3-T1: Core Exception Hierarchy and Base DTOs
+- **Date:** 2026-06-26
+- **Model used:** Antigravity (DeepMind)
+- **What was accomplished:**
+  - **Exception Hierarchy:** Created `CairnException` as the abstract base for all custom exceptions to enforce HTTP status mapping. Implemented `ModelNotLoadedException` (503), `RateLimitExceededException` (429), and `IllegalStateTransitionException` (409).
+  - **Refactoring:** Moved `DomainNotFoundException` (404) from `routing` to `model.exception` and refactored it to extend `CairnException`.
+  - **DTOs:** Created `ErrorResponse` to standardize API error payloads and `PageResponse` to provide a clean wrapper for paginated endpoints.
+  - **Global Exception Handler:** Updated `GlobalExceptionHandler` to catch `CairnException` and construct the standard `ErrorResponse` DTO automatically.
+  - **Modulith Boundaries:** Resolved Spring Modulith violation errors by adding `package-info.java` files with `@NamedInterface` to explicitly export the `exception` and `dto` sub-packages from the `model` module.
+- **Files created:** `CairnException.java`, `ModelNotLoadedException.java`, `RateLimitExceededException.java`, `IllegalStateTransitionException.java`, `ErrorResponse.java`, `PageResponse.java`, `package-info.java` (x2)
+- **Decisions made:** All API errors now flow through `CairnException` and `GlobalExceptionHandler` for absolute consistency. Modulith sub-packages are explicitly declared as APIs using `@NamedInterface`.
+- **What was left incomplete:** E3-T2.
+- **Next task:** E3-T2 (Conversation & Message Persistence).
