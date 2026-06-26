@@ -79,7 +79,7 @@
 **Interview Story:** "I built an enterprise-grade Spring Boot core using Modulith to enforce boundaries, Testcontainers for honest testing, and Flyway for schema versioning."
 *   **Tasks Completed:** Initialized Spring Modulith with 6 core modules (routing, model, agents, tools, observability, security), PostgreSQL + Flyway V1 (pgvector), Logback JSON logging, Multi-stage Dockerfile, GitHub Actions CI/CD, Testcontainers integration, Railway config, and Enterprise Hardening (Spotless, Bucket4j rate limiting, RFC 7807 global exception handling, validation, Swagger OpenAPI).
 
-### Epic 2: The Semantic Kernel (Status: 🟢 ACTIVE)
+### Epic 2: The Semantic Kernel (Status: ✅ COMPLETED)
 **Interview Story:** "I built a semantic router that classifies intent locally in ~20ms, bypassing the massive cost and latency of asking an LLM to decide which agent should handle the prompt."
 *   **E2-T1:** ✅ Implement Redis context cache with TTL per domain.
 *   **E2-T2:** Add Deep Java Library (DJL) dependencies and implement `LocalEmbeddingService` for offline, CPU-bound 384-dimensional embeddings.

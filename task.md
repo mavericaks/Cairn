@@ -32,7 +32,7 @@
 | E3-T6 | Ollama Integration (Model Module) | ✅ |
 | E3-T7 | ChatController + SSE Streaming | ✅ |
 | E3-T8 | Conversation Management API | ✅ |
-| E3-T9 | Epic 3 Walkthrough + Journal | ⚪ |
+| E3-T9 | Epic 3 Walkthrough + Journal | ✅ |
 
 ---
 
