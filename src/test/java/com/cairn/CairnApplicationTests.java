@@ -14,6 +14,10 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import static org.mockito.Mockito.when;
+import org.junit.jupiter.api.BeforeEach;
+import com.cairn.model.OllamaModelManager;
 
 /**
  * Smoke test: Verifies the Spring Boot application context loads successfully. (E1-T7)
@@ -48,6 +52,14 @@ class CairnApplicationTests {
   @Autowired private DataSource dataSource;
 
   @Autowired private TestRestTemplate restTemplate;
+
+  @MockitoBean private OllamaModelManager ollamaModelManager;
+
+  @BeforeEach
+  void setUp() {
+    when(ollamaModelManager.isOllamaRunning()).thenReturn(true);
+    when(ollamaModelManager.isModelAvailable()).thenReturn(true);
+  }
 
   /**
    * WHY: Proves that the entire Spring Boot context loads without errors. This implicitly
