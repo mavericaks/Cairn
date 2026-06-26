@@ -110,6 +110,13 @@
              Data Access Layer
              ═══════════════════════════════════════════════════════════ -->
 
+        <!-- WHY: Enables Aspect-Oriented Programming (AOP) for cross-cutting concerns
+             like @Audited method logging and metrics tracking (SDE Standard #4). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
         <!-- WHY: JPA + Hibernate for database operations.
              Actual datasource configuration is deferred to E1-T3 (Flyway + PostgreSQL). -->
         <dependency>

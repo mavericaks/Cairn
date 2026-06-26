@@ -14,10 +14,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@SpringBootTest(properties = {
-    "cairn.rate-limit.requests-per-minute=20",
-    "cairn.rate-limit.burst-capacity=20"
-})
+@SpringBootTest(
+    properties = {"cairn.rate-limit.requests-per-minute=20", "cairn.rate-limit.burst-capacity=20"})
 @AutoConfigureMockMvc
 @Import({TestcontainersConfig.class, HardeningIntegrationTests.DummyController.class})
 class HardeningIntegrationTests {
