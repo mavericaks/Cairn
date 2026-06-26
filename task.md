@@ -29,7 +29,7 @@
 | E3-T3 | Spring Profiles + Configuration Properties | ✅ |
 | E3-T4 | Custom AOP @Audited Annotation | ✅ |
 | E3-T5 | Agent Interface + Orchestrator | ✅ |
-| E3-T6 | Ollama Integration (Model Module) | ⚪ |
+| E3-T6 | Ollama Integration (Model Module) | ✅ |
 | E3-T7 | ChatController + SSE Streaming | ⚪ |
 | E3-T8 | Conversation Management API | ⚪ |
 | E3-T9 | Epic 3 Walkthrough + Journal | ⚪ |

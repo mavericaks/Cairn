@@ -171,6 +171,12 @@
             <artifactId>spring-ai-starter-model-openai</artifactId>
         </dependency>
 
+        <!-- WHY: Spring AI Ollama integration for local model orchestration. -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-ollama</artifactId>
+        </dependency>
+
         <!-- ═══════════════════════════════════════════════════════════
              Local Embeddings (Epic 2)
              ═══════════════════════════════════════════════════════════ -->

@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 
 import com.cairn.agents.dto.AgentRequest;
 import com.cairn.agents.event.DomainRoutedEvent;
-import com.cairn.routing.Domain;
 import com.cairn.routing.DomainRouter;
 import com.cairn.routing.RoutingResult;
 import java.util.List;
