@@ -1,0 +1,20 @@
+# ═══════════════════════════════════════════════════════════════════
+# PROD Profile (application-prod.yml)
+# WHY: Stricter settings, JSON logging, cloud URLs.
+# ═══════════════════════════════════════════════════════════════════
+
+logging:
+  level:
+    com.cairn: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+
+cairn:
+  ollama:
+    base-url: ${OLLAMA_URL:http://ollama-service:11434}
+    default-model: ${OLLAMA_MODEL:llama3.2}
+    timeout-seconds: 60
+    context-window: 4096
+  rate-limit:
+    requests-per-minute: ${RATE_LIMIT_RPM:20}
+    burst-capacity: ${RATE_LIMIT_BURST:20}

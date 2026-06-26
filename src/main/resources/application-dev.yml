@@ -1,0 +1,21 @@
+# ═══════════════════════════════════════════════════════════════════
+# DEV Profile (application-dev.yml)
+# WHY: Activated automatically if no SPRING_PROFILES_ACTIVE is set.
+# Provides safe defaults for running on a developer's laptop.
+# ═══════════════════════════════════════════════════════════════════
+
+logging:
+  level:
+    com.cairn: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+
+cairn:
+  ollama:
+    base-url: http://localhost:11434
+    default-model: llama3.2
+    timeout-seconds: 120
+    context-window: 4096
+  rate-limit:
+    requests-per-minute: 1000 # Relaxed for local testing
+    burst-capacity: 1000

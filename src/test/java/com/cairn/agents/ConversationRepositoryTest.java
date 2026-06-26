@@ -36,10 +36,14 @@ class ConversationRepositoryTest {
   @BeforeEach
   void setUp() {
     testUserId = UUID.randomUUID();
-    testDomain = domainRepository.findAll().stream().findFirst().orElseGet(() -> {
-      Domain d = new Domain("test_domain", "test description", new float[384]);
-      return domainRepository.saveAndFlush(d);
-    });
+    testDomain =
+        domainRepository.findAll().stream()
+            .findFirst()
+            .orElseGet(
+                () -> {
+                  Domain d = new Domain("test_domain", "test description", new float[384]);
+                  return domainRepository.saveAndFlush(d);
+                });
   }
 
   @Test

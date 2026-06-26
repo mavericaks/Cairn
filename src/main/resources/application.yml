@@ -12,6 +12,10 @@ spring:
     # WHY: Named for service discovery, logging correlation, and Actuator identification.
     name: cairn
 
+  profiles:
+    # WHY: Dev is active by default. Can be overridden with SPRING_PROFILES_ACTIVE=prod
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
   # WHY: Java 21 Virtual Threads provide lightweight concurrency for agent orchestration
   # without the complexity of reactive programming. Enables Loom-backed @Async and
   # Tomcat request handling. Preparation for Epic 3 (Agent Swarm).

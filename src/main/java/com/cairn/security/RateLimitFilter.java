@@ -24,9 +24,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class RateLimitFilter implements Filter {
 
+  private final CairnRateLimitProperties properties;
+
   // Simple in-memory map of IP Address -> Bucket
   // Note: In a highly distributed prod environment, this would be backed by Redis.
   private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
+
+  public RateLimitFilter(CairnRateLimitProperties properties) {
+    this.properties = properties;
+  }
 
   /**
    * WHY: Factory method to create a bucket with 20 requests per minute. This is generous enough for
@@ -35,7 +41,10 @@ public class RateLimitFilter implements Filter {
    * @return A configured Bucket4j instance
    */
   private Bucket createNewBucket() {
-    Bandwidth limit = Bandwidth.classic(20, Refill.greedy(20, Duration.ofMinutes(1)));
+    Bandwidth limit =
+        Bandwidth.classic(
+            properties.getBurstCapacity(),
+            Refill.greedy(properties.getRequestsPerMinute(), Duration.ofMinutes(1)));
     return Bucket.builder().addLimit(limit).build();
   }
 
