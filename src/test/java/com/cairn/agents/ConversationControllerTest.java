@@ -86,8 +86,8 @@ class ConversationControllerTest {
                 .header("X-User-Id", testUserId.toString()))
         .andExpect(status().isNoContent());
 
-    mockMvc.perform(get("/api/v1/conversations")
-            .header("X-User-Id", testUserId.toString()))
+    mockMvc
+        .perform(get("/api/v1/conversations").header("X-User-Id", testUserId.toString()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalElements").value(0));
   }
