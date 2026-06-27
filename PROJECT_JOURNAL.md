@@ -280,6 +280,7 @@
 | 2026-06-12 | Rule 14 added | Enforce env vars for all credentials/URLs/env-specific values (ADR-007) |
 | 2026-06-13 | Rule 15 added | No Scope Reduction by Deference — AI must ask for user prerequisites in PRE-GATE, not silently reduce task scope. Born from E1-T6 revert (Session 2). |
 | 2026-06-15 | Rule 16 added | Production-Grade First — Enforces handling of edge cases, graceful degradation on infrastructure failure, and metrics tracking from day one. Born from user rejection of E2-T1 happy-path implementation (Session 3). |
+| 2026-06-27 | Rule 17 added | Feature Branch Workflow — No direct commits to main. All changes via PR with CI gating. Branch naming, commit convention, and Epic tagging standardized. Born from Session 12 git hygiene audit. |
 
 ---
 
@@ -504,3 +505,16 @@
 - **Decisions made:** All API errors now flow through `CairnException` and `GlobalExceptionHandler` for absolute consistency. Modulith sub-packages are explicitly declared as APIs using `@NamedInterface`.
 - **What was left incomplete:** E3-T2.
 - **Next task:** E3-T2 (Conversation & Message Persistence).
+
+### Session 12 — Git Hygiene Audit & Repo Cleanup
+- **Date:** 2026-06-27
+- **Model used:** Claude Opus 4.6 (Thinking)
+- **What was accomplished:**
+  - **Git Audit:** User identified that the repo had inconsistent branching, naming, and commit conventions. AI acknowledged this was a failure to enforce L7 (CI/CD) production standards from day one.
+  - **Branch Cleanup:** Deleted 13 stale remote branches and 2 stale local branches (`feat/e4-observability` discarded — contained ungated, unapproved observability work).
+  - **Epic Tagging:** Created annotated tags `v0.1.0` (Epic 1), `v0.2.0` (Epic 2), `v0.3.0` (Epic 3) at correct commit boundaries. Pushed to GitHub.
+  - **Rule 17 Added:** Feature Branch Workflow — codifies branch naming (`feat/e{epic}-t{task}-short-description`), commit convention (Conventional Commits), PR-based merging, and Epic tagging.
+  - **task.md Updated:** Epic 3 marked as completed (tagged v0.3.0). Epic 4 (RAG Pipeline) set as active with 5 preliminary tasks.
+- **Decisions made:** All future work goes through PRs. No direct pushes to main. Stale branches are deleted immediately after merge. The current repo's messy history is accepted as-is; a clean replay can be done post-project-completion.
+- **What was left incomplete:** Epic 4 implementation. GitHub branch protection rules (need to be set via GitHub UI by user).
+- **Next task:** E4-T1 (LocalEmbeddingModelAdapter + VectorStore Config).

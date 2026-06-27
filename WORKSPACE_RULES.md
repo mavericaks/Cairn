@@ -168,6 +168,17 @@ This means explicitly handling null inputs, aggressively catching and degrading 
 
 ---
 
+## RULE 17 — Feature Branch Workflow (No Direct Commits to Main)
+All code changes must go through a Pull Request. No direct commits or pushes to `main`. Ever.
+- **Branch naming:** `feat/e{epic}-t{task}-short-description` (always lowercase, always with task ID)
+- **Commit messages:** `feat(module): E{N}-T{N} description` (Conventional Commits format)
+- **Workflow:** Branch → Commit → Push → Open PR → CI passes → Merge via GitHub → Branch auto-deleted
+- **Tagging:** Each completed Epic is tagged on `main` as `v0.{epic}.0` (e.g., `v0.4.0`)
+- **Enforcement:** `main` branch has GitHub branch protection enabled. PRs require CI to pass before merge.
+- **Violation:** Any commit pushed directly to `main` without a PR. Any branch left on remote after merge.
+
+---
+
 ## Adding or Modifying Rules
 1. Propose the new rule in chat with justification.
 2. User approves.

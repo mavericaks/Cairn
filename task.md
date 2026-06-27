@@ -11,16 +11,16 @@
 
 | Field | Value |
 |-------|-------|
-| Epic Number | 3 |
-| Epic Title | The Chat API |
-| Capability | End-to-end chat pipeline with SSE streaming — user sends text, gets a streamed AI response |
-| Interview Story | "I orchestrated a multi-agent swarm using Java 21 Virtual Threads, ensuring high-throughput, non-blocking parallel execution across domain agents." |
+| Epic Number | 4 |
+| Epic Title | The RAG Pipeline |
+| Capability | Retrieval-Augmented Generation — agents inject document context into LLM prompts for factual answers |
+| Interview Story | "I built a document ingestion pipeline that chunks uploads, embeds them locally on CPU, stores them in pgvector, and retrieves relevant context at query time to ground LLM responses in real facts." |
 | Status | 🟢 ACTIVE |
-| Definition of Done | `ChatController` streams SSE tokens back to the client after routing through the orchestrator to a specific agent. |
+| Definition of Done | Upload a document, ask a question about it, and receive an accurate answer grounded in the document's content. |
 
 ---
 
-## Epic 3 Task Board
+## Epic 3 Task Board (✅ COMPLETED — tagged v0.3.0)
 
 | ID | Task | Status |
 |----|------|--------|
@@ -33,6 +33,18 @@
 | E3-T7 | ChatController + SSE Streaming | ✅ |
 | E3-T8 | Conversation Management API | ✅ |
 | E3-T9 | Epic 3 Walkthrough + Journal | ✅ |
+
+---
+
+## Epic 4 Task Board
+
+| ID | Task | Status |
+|----|------|--------|
+| E4-T1 | LocalEmbeddingModelAdapter + VectorStore Config | ⚪ |
+| E4-T2 | Document Ingestion Service + Controller | ⚪ |
+| E4-T3 | RAG Context Injection into Agents | ⚪ |
+| E4-T4 | HyDE Implementation (DiscoveryAgent) | ⚪ |
+| E4-T5 | Integration Tests + Epic 4 Walkthrough | ⚪ |
 
 ---
 
