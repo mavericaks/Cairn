@@ -1,14 +1,15 @@
 package com.cairn.agents.impl;
 
 import com.cairn.agents.AbstractDomainAgent;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
-/** WHY: Handles creative requests like generating code, writing essays, or brainstorming. */
+/** WHY: Handles generative queries like code generation, creative writing, or summarization. */
 @Component
 public class GenerativeAgent extends AbstractDomainAgent {
-  public GenerativeAgent(VectorStore vectorStore) {
-    super(vectorStore);
+  public GenerativeAgent(VectorStore vectorStore, ChatClient.Builder chatClientBuilder) {
+    super(vectorStore, chatClientBuilder);
   }
 
   @Override

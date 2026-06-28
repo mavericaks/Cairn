@@ -259,6 +259,24 @@
         </dependency>
 
         <!-- ═══════════════════════════════════════════════════════════
+             Event Streaming & HITL (Epic 5)
+             ═══════════════════════════════════════════════════════════ -->
+
+        <!-- WHY: Spring Kafka provides integration with Apache Kafka for our
+             Human-in-the-Loop tool approval queue and audit logging. -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
+        <!-- WHY: Spring Modulith Events Kafka automatically publishes @Externalized
+             application events to Kafka topics without manual KafkaTemplate boilerplate. -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-events-kafka</artifactId>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════
              Test Dependencies
              ═══════════════════════════════════════════════════════════ -->
 
@@ -278,11 +296,24 @@
         </dependency>
 
         <!-- WHY: Testcontainers integration with Spring Boot @ServiceConnection.
-             Auto-configures datasource properties from the test container — zero manual config.
-             Tests get a disposable PostgreSQL+pgvector DB that starts/stops automatically. (ADR-008) -->
+             Eliminates boilerplate properties injection for databases/brokers. (ADR-008) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- WHY: Spring Kafka Test provides embedded Kafka brokers for integration tests. -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- WHY: Testcontainers Kafka module. (ADR-008) -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
             <scope>test</scope>
         </dependency>
 

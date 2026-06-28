@@ -1,14 +1,15 @@
 package com.cairn.agents.impl;
 
 import com.cairn.agents.AbstractDomainAgent;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
-/** WHY: Handles queries about the system itself, diagnostics, settings, or user preferences. */
+/** WHY: Handles internal system queries, routing logic debugging, and observability questions. */
 @Component
 public class SystemAgent extends AbstractDomainAgent {
-  public SystemAgent(VectorStore vectorStore) {
-    super(vectorStore);
+  public SystemAgent(VectorStore vectorStore, ChatClient.Builder chatClientBuilder) {
+    super(vectorStore, chatClientBuilder);
   }
 
   @Override

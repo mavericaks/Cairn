@@ -11,12 +11,12 @@
 
 | Field | Value |
 |-------|-------|
-| Epic Number | 4 |
-| Epic Title | The RAG Pipeline |
-| Capability | Retrieval-Augmented Generation — agents inject document context into LLM prompts for factual answers |
-| Interview Story | "I built a document ingestion pipeline that chunks uploads, embeds them locally on CPU, stores them in pgvector, and retrieves relevant context at query time to ground LLM responses in real facts." |
+| Epic Number | 5 |
+| Epic Title | Agentic Tools |
+| Capability | Give agents the ability to take safe external actions immediately, and unsafe actions via an async HITL queue |
+| Interview Story | "I built a secure tool execution module leveraging Kafka for human-in-the-loop approvals of destructive agent actions, preventing rogue AI behaviors." |
 | Status | 🟢 ACTIVE |
-| Definition of Done | Upload a document, ask a question about it, and receive an accurate answer grounded in the document's content. |
+| Definition of Done | A safe tool is executed synchronously, and an unsafe tool requires REST API approval before execution. |
 
 ---
 
@@ -36,7 +36,7 @@
 
 ---
 
-## Epic 4 Task Board
+## Epic 4 Task Board (✅ COMPLETED)
 
 | ID | Task | Status |
 |----|------|--------|
@@ -45,6 +45,20 @@
 | E4-T3 | RAG Context Injection into Agents | ✅ |
 | E4-T4 | HyDE Implementation (DiscoveryAgent) | ✅ |
 | E4-T5 | Integration Tests + Epic 4 Walkthrough | ✅ |
+
+---
+
+## Epic 5 Task Board
+
+| ID | Task | Status |
+|----|------|--------|
+| E5-T1 | Add Kafka to docker-compose and Spring Kafka to pom.xml | ✅ |
+| E5-T2 | Create V5__tool_executions.sql migration | ✅ |
+| E5-T3 | Create Tools module structure (ToolExecutionService, Safe/Unsafe configs) | ✅ |
+| E5-T4 | Implement Kafka Event Consumers for HITL Approval | ✅ |
+| E5-T5 | Build ToolApprovalController (REST API) | ✅ |
+| E5-T6 | Wire Agent tools to DomainRouter and prompt building | ✅ |
+| E5-T7 | Integration Testing & Epic 5 Walkthrough | ✅ |
 
 ---
 
@@ -148,7 +162,7 @@
 | Epic | Title | Proposed | Approved |
 |------|-------|---------|----------|
 | 3 | The Agent Swarm | Session 0 | ✅ Active |
-| 4 | Observability | Session 0 | Pending |
-| 5 | Agentic Tools (Safe) | Session 0 | Pending |
+| 4 | The RAG Pipeline | Session 0 | ✅ Active |
+| 5 | Agentic Tools (Safe) | Session 0 | ✅ Active |
 | 6 | Security Hardening | Session 0 | Pending |
 | 7 | The LoRA Swarm | Session 3 | Pending |

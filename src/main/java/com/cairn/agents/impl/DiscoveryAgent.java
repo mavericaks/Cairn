@@ -2,17 +2,20 @@ package com.cairn.agents.impl;
 
 import com.cairn.agents.AbstractDomainAgent;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
-/** WHY: Handles requests for finding information, documentation, or searching the web/database. */
+/** WHY: Handles queries requiring documentation search, semantic discovery, and RAG retrieval. */
 @Component
 public class DiscoveryAgent extends AbstractDomainAgent {
-  private final ChatClient chatClient;
 
-  public DiscoveryAgent(VectorStore vectorStore, ChatClient.Builder chatClientBuilder) {
-    super(vectorStore);
-    this.chatClient = chatClientBuilder.build();
+  private final ChatModel chatModel;
+
+  public DiscoveryAgent(
+      VectorStore vectorStore, ChatClient.Builder chatClientBuilder, ChatModel chatModel) {
+    super(vectorStore, chatClientBuilder);
+    this.chatModel = chatModel;
   }
 
   @Override
