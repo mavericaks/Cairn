@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
@@ -37,10 +38,10 @@ public class ChatController {
   }
 
   @PostMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-  public SseEmitter streamChat(
-      @RequestHeader(value = "X-User-Id", defaultValue = "00000000-0000-0000-0000-000000000001")
-          UUID userId,
-      @Valid @RequestBody ChatRequest request) {
+  public SseEmitter streamChat(@Valid @RequestBody ChatRequest request) {
+
+    String principal = SecurityContextHolder.getContext().getAuthentication().getName();
+    UUID userId = UUID.fromString(principal);
 
     // 60-second timeout for the SSE connection
     SseEmitter emitter = new SseEmitter(60_000L);

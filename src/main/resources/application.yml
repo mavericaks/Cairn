@@ -63,6 +63,15 @@ spring:
     # WHY: Standard Maven/Gradle resource location for migration SQL files.
     locations: classpath:db/migration
 
+  # ── Security (E6-T1) ──────────────────────────────────────────────
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${GITHUB_CLIENT_ID:mock-client-id}
+            client-secret: ${GITHUB_CLIENT_SECRET:mock-client-secret}
+
   # ── Spring AI (Epic 2+ will configure) ──────────────────────────
   # ai.openai configuration deferred to Epic 2.
 

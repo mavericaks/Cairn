@@ -15,6 +15,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.cairn.security.Role;
+import com.cairn.security.User;
+import com.cairn.security.UserRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.test.context.support.WithMockUser;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestcontainersConfig.class)
@@ -22,6 +28,8 @@ class ConversationControllerTest {
 
   @Autowired private MockMvc mockMvc;
   @Autowired private ConversationRepository conversationRepository;
+  @Autowired private UserRepository userRepository;
+  @Autowired private JdbcTemplate jdbcTemplate;
 
   private UUID testUserId;
   private Conversation testConversation;
@@ -29,7 +37,14 @@ class ConversationControllerTest {
   @BeforeEach
   void setUp() {
     conversationRepository.deleteAll();
+    userRepository.deleteAll();
+    
     testUserId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    jdbcTemplate.update(
+        "INSERT INTO users (id, github_id, email, username, role, created_at, updated_at) " +
+        "VALUES (?, ?, ?, ?, CAST(? AS user_role), now(), now())",
+        testUserId, "12345", "test@example.com", "testuser", Role.USER.name());
+    
     testConversation = new Conversation(testUserId);
     testConversation.setTitle("Test History");
     testConversation.addMessage(new Message(MessageRole.USER, "First message"));
@@ -38,9 +53,10 @@ class ConversationControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = "USER")
   void shouldReturnPaginatedConversations() throws Exception {
     mockMvc
-        .perform(get("/api/v1/conversations").header("X-User-Id", testUserId.toString()))
+        .perform(get("/api/v1/conversations"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data").isArray())
         .andExpect(jsonPath("$.data[0].title").value("Test History"))
@@ -48,11 +64,11 @@ class ConversationControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = "USER")
   void shouldReturnPaginatedMessagesForConversation() throws Exception {
     mockMvc
         .perform(
-            get("/api/v1/conversations/" + testConversation.getId() + "/messages")
-                .header("X-User-Id", testUserId.toString()))
+            get("/api/v1/conversations/" + testConversation.getId() + "/messages"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data").isArray())
         .andExpect(jsonPath("$.data.length()").value(2))
@@ -61,13 +77,13 @@ class ConversationControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "00000000-0000-0000-0000-000000000002", roles = "USER")
   void shouldBlockAccessToOtherUsersConversation() throws Exception {
-    UUID otherUserId = UUID.randomUUID();
+    UUID otherUserId = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
     mockMvc
         .perform(
-            get("/api/v1/conversations/" + testConversation.getId() + "/messages")
-                .header("X-User-Id", otherUserId.toString()))
+            get("/api/v1/conversations/" + testConversation.getId() + "/messages"))
         .andExpect(
             status()
                 .isInternalServerError()); // GlobalExceptionHandler will map IllegalStateException
@@ -79,15 +95,15 @@ class ConversationControllerTest {
   }
 
   @Test
+  @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = "USER")
   void shouldDeleteConversation() throws Exception {
     mockMvc
         .perform(
-            delete("/api/v1/conversations/" + testConversation.getId())
-                .header("X-User-Id", testUserId.toString()))
+            delete("/api/v1/conversations/" + testConversation.getId()))
         .andExpect(status().isNoContent());
 
     mockMvc
-        .perform(get("/api/v1/conversations").header("X-User-Id", testUserId.toString()))
+        .perform(get("/api/v1/conversations"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalElements").value(0));
   }

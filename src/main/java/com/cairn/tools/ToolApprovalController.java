@@ -10,11 +10,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 
 /** WHY: REST API for administrators to view and manage the HITL tool approval queue. */
 @RestController
 @RequestMapping("/api/v1/tools/approvals")
+@PreAuthorize("hasRole('ADMIN')")
 public class ToolApprovalController {
 
   private final ToolExecutionRepository repository;
@@ -51,8 +54,9 @@ public class ToolApprovalController {
     execution.setStatus(ToolStatus.APPROVED);
     execution.setResolvedAt(java.time.ZonedDateTime.now());
 
-    // Mocking the admin user ID since we don't have security context yet
-    UUID adminId = UUID.randomUUID();
+    // Extract real admin ID from SecurityContext
+    String principal = SecurityContextHolder.getContext().getAuthentication().getName();
+    UUID adminId = UUID.fromString(principal);
     execution.setApprovedBy(adminId);
 
     repository.save(execution);
@@ -79,8 +83,10 @@ public class ToolApprovalController {
     execution.setStatus(ToolStatus.REJECTED);
     execution.setResolvedAt(java.time.ZonedDateTime.now());
 
-    // Mocking the admin user ID
-    execution.setApprovedBy(UUID.randomUUID());
+    // Extract real admin ID from SecurityContext
+    String principal = SecurityContextHolder.getContext().getAuthentication().getName();
+    UUID adminId = UUID.fromString(principal);
+    execution.setApprovedBy(adminId);
 
     repository.save(execution);
 

@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,34 +30,33 @@ public class ConversationController {
 
   @GetMapping
   public PageResponse<ConversationDto> getConversations(
-      @RequestHeader(value = "X-User-Id", defaultValue = "00000000-0000-0000-0000-000000000001")
-          UUID userId,
       @PageableDefault(
               size = 20,
               sort = "updatedAt",
               direction = org.springframework.data.domain.Sort.Direction.DESC)
           Pageable pageable) {
+    String principal = SecurityContextHolder.getContext().getAuthentication().getName();
+    UUID userId = UUID.fromString(principal);
     return conversationService.getUserConversations(userId, pageable);
   }
 
   @GetMapping("/{id}/messages")
   public PageResponse<MessageDto> getMessages(
-      @RequestHeader(value = "X-User-Id", defaultValue = "00000000-0000-0000-0000-000000000001")
-          UUID userId,
       @PathVariable UUID id,
       @PageableDefault(
               size = 50,
               sort = "createdAt",
               direction = org.springframework.data.domain.Sort.Direction.ASC)
           Pageable pageable) {
+    String principal = SecurityContextHolder.getContext().getAuthentication().getName();
+    UUID userId = UUID.fromString(principal);
     return conversationService.getConversationMessages(userId, id, pageable);
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteConversation(
-      @RequestHeader(value = "X-User-Id", defaultValue = "00000000-0000-0000-0000-000000000001")
-          UUID userId,
-      @PathVariable UUID id) {
+  public ResponseEntity<Void> deleteConversation(@PathVariable UUID id) {
+    String principal = SecurityContextHolder.getContext().getAuthentication().getName();
+    UUID userId = UUID.fromString(principal);
     conversationService.deleteConversation(userId, id);
     return ResponseEntity.noContent().build();
   }

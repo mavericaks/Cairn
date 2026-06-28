@@ -5,6 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.cairn.TestcontainersConfig;
 import com.cairn.routing.Domain;
 import com.cairn.routing.DomainRepository;
+import com.cairn.security.Role;
+import com.cairn.security.User;
+import com.cairn.security.UserRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +33,8 @@ class ConversationRepositoryTest {
   @Autowired private ConversationRepository conversationRepository;
   @Autowired private MessageRepository messageRepository;
   @Autowired private DomainRepository domainRepository;
+  @Autowired private UserRepository userRepository;
+  @Autowired private JdbcTemplate jdbcTemplate;
 
   private UUID testUserId;
   private Domain testDomain;
@@ -36,6 +42,11 @@ class ConversationRepositoryTest {
   @BeforeEach
   void setUp() {
     testUserId = UUID.randomUUID();
+    jdbcTemplate.update(
+        "INSERT INTO users (id, github_id, email, username, role, created_at, updated_at) " +
+        "VALUES (?, ?, ?, ?, CAST(? AS user_role), now(), now())",
+        testUserId, "github-" + testUserId, "test-" + testUserId + "@example.com", "testuser-" + testUserId, Role.USER.name());
+    
     testDomain =
         domainRepository.findAll().stream()
             .findFirst()

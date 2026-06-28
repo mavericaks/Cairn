@@ -11,12 +11,12 @@
 
 | Field | Value |
 |-------|-------|
-| Epic Number | 5 |
-| Epic Title | Agentic Tools |
-| Capability | Give agents the ability to take safe external actions immediately, and unsafe actions via an async HITL queue |
-| Interview Story | "I built a secure tool execution module leveraging Kafka for human-in-the-loop approvals of destructive agent actions, preventing rogue AI behaviors." |
+| Epic Number | 6 |
+| Epic Title | Security Hardening |
+| Capability | Secure the API using OAuth2 (GitHub), JWT, and Role-Based Access Control |
+| Interview Story | "I secured the platform by implementing OAuth2 login with GitHub, issuing custom JWTs, and enforcing strict Role-Based Access Control across all Spring Modulith boundaries." |
 | Status | 🟢 ACTIVE |
-| Definition of Done | A safe tool is executed synchronously, and an unsafe tool requires REST API approval before execution. |
+| Definition of Done | All endpoints require authentication. Admin endpoints require ROLE_ADMIN. Users can log in via GitHub OAuth2. |
 
 ---
 
@@ -48,7 +48,7 @@
 
 ---
 
-## Epic 5 Task Board
+## Epic 5 Task Board (✅ COMPLETED)
 
 | ID | Task | Status |
 |----|------|--------|
@@ -59,6 +59,20 @@
 | E5-T5 | Build ToolApprovalController (REST API) | ✅ |
 | E5-T6 | Wire Agent tools to DomainRouter and prompt building | ✅ |
 | E5-T7 | Integration Testing & Epic 5 Walkthrough | ✅ |
+
+---
+
+## Epic 6 Task Board
+
+| ID | Task | Status |
+|----|------|--------|
+| E6-T1 | Add Spring Security + OAuth2 + JWT dependencies | ✅ |
+| E6-T2 | Create V6__users_and_security.sql migration | ✅ |
+| E6-T3 | Implement User entity, Role enum, and UserRepository | ✅ |
+| E6-T4 | Build JwtService for token generation and validation | ✅ |
+| E6-T5 | Configure SecurityConfig, JwtAuthenticationFilter, and OAuth2LoginSuccessHandler | ✅ |
+| E6-T6 | Implement UserController and apply @PreAuthorize annotations | ✅ |
+| E6-T7 | Integration Testing & Epic 6 Walkthrough | ✅ |
 
 ---
 
@@ -164,5 +178,5 @@
 | 3 | The Agent Swarm | Session 0 | ✅ Active |
 | 4 | The RAG Pipeline | Session 0 | ✅ Active |
 | 5 | Agentic Tools (Safe) | Session 0 | ✅ Active |
-| 6 | Security Hardening | Session 0 | Pending |
+| 6 | Security Hardening | Session 0 | ✅ Active |
 | 7 | The LoRA Swarm | Session 3 | Pending |

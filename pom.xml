@@ -95,6 +95,29 @@
         </dependency>
 
         <!-- ═══════════════════════════════════════════════════════════
+             Security Layer (Epic 6)
+             ═══════════════════════════════════════════════════════════ -->
+
+        <!-- WHY: Core Spring Security framework for locking down endpoints and providing RBAC. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- WHY: OAuth2 Client for enabling 'Log in with GitHub' functionality. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+        </dependency>
+
+        <!-- WHY: Auth0's java-jwt library for generating and verifying custom JWTs natively. -->
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>java-jwt</artifactId>
+            <version>4.4.0</version>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════
              Module Boundary Enforcement (ADR-001)
              ═══════════════════════════════════════════════════════════ -->
 
@@ -284,6 +307,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- WHY: Security testing utilities (e.g. @WithMockUser) for verifying RBAC. -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
 

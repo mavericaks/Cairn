@@ -21,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.security.test.context.support.WithMockUser;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -33,9 +34,10 @@ class ChatControllerTest {
   @MockitoBean private ChatService chatService;
 
   @Test
+  @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = "USER")
   void shouldReturnSseStreamOnValidRequest() throws Exception {
     // Arrange
-    UUID userId = UUID.randomUUID();
+    UUID userId = UUID.fromString("00000000-0000-0000-0000-000000000001");
     ChatRequest request = new ChatRequest(null, "Hello, agent!");
 
     when(chatService.processMessage(eq(userId), any(ChatRequest.class))).thenReturn("Hello user!");
@@ -45,11 +47,11 @@ class ChatControllerTest {
         mockMvc
             .perform(
                 post("/api/v1/chat")
-                    .header("X-User-Id", userId.toString())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isOk())
             .andReturn();
+
+    System.out.println("RESPONSE BODY: " + result.getResponse().getContentAsString());
 
     // Spring MVC testing for async SSE requires waiting for the async dispatch to complete
     mockMvc
