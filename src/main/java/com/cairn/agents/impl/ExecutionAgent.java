@@ -1,6 +1,7 @@
 package com.cairn.agents.impl;
 
 import com.cairn.agents.AbstractDomainAgent;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Component;
 
 /**
@@ -9,6 +10,9 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ExecutionAgent extends AbstractDomainAgent {
+  public ExecutionAgent(VectorStore vectorStore) {
+    super(vectorStore);
+  }
 
   @Override
   public String getDomainName() {

@@ -1,5 +1,6 @@
 package com.cairn.routing;
 
+import com.cairn.model.LocalEmbeddingService;
 import com.cairn.model.exception.DomainNotFoundException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;

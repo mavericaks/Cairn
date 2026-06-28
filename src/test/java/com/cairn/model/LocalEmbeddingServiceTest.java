@@ -1,4 +1,4 @@
-package com.cairn.routing;
+package com.cairn.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

@@ -518,3 +518,18 @@
 - **Decisions made:** All future work goes through PRs. No direct pushes to main. Stale branches are deleted immediately after merge. The current repo's messy history is accepted as-is; a clean replay can be done post-project-completion.
 - **What was left incomplete:** Epic 4 implementation. GitHub branch protection rules (need to be set via GitHub UI by user).
 - **Next task:** E4-T1 (LocalEmbeddingModelAdapter + VectorStore Config).
+
+### Session 13 — Epic 4 (The RAG Pipeline) One-Shot Execution
+- **Date:** 2026-06-28
+- **Model used:** Gemini 3.1 Pro (High)
+- **What was accomplished:**
+  - **Process Override:** The user instructed to execute the entirety of Epic 4 in a single shot to save time, bypassing the task-by-task pre-gate protocol.
+  - **Git Hygiene:** Created feature branch `feat/epic4-rag-pipeline` per Rule 17.
+  - **E4-T1 (Adapter):** Added `LocalEmbeddingModelAdapter` and `VectorStoreConfig` to bridge our zero-cost DJL embeddings into Spring AI's `PgVectorStore`.
+  - **E4-T2 (Ingestion):** Built `DocumentIngestionService` (Tika extraction + TokenTextSplitter) and exposed `POST /api/v1/documents/upload`.
+  - **E4-T3 (Context Injection):** Updated `AbstractDomainAgent` to automatically perform a similarity search against the VectorStore and inject retrieved chunks into the LLM prompt.
+  - **E4-T4 (HyDE):** Overrode context retrieval in `DiscoveryAgent` to use Hypothetical Document Embeddings (ask LLM for a hallucinated answer, then search the vector store with it) to drastically improve retrieval accuracy.
+  - **Testing & Verification:** Added `LocalEmbeddingModelAdapterTest`. Ran `mvn clean verify` to validate compilation, tests, and formatting.
+- **Decisions made:** We deferred setting up the GitHub MCP server to the future "clean replay" repo, focusing instead on rapid delivery of Epic 4. We utilized the default `TokenTextSplitter` configuration for document chunking.
+- **What was left incomplete:** MCP Server integration (deferred). Merging the `feat/epic4-rag-pipeline` PR to main via GitHub UI.
+- **Next task:** User needs to merge the Epic 4 PR, then we begin Epic 5 (Agentic Tools) or Epic 7 (ML Fine-tuning).
