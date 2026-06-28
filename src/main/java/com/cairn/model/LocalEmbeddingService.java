@@ -1,4 +1,4 @@
-package com.cairn.routing;
+package com.cairn.model;
 
 import ai.djl.MalformedModelException;
 import ai.djl.inference.Predictor;

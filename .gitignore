@@ -16,6 +16,24 @@ target/
 # ── Environment (Rule 14 / ADR-007) ──────────────────────────────
 # WHY: .env contains secrets. Only .env.example is committed.
 .env
+# ═══════════════════════════════════════════════════════════════════
+# Cairn .gitignore
+# ═══════════════════════════════════════════════════════════════════
+
+# ── Build output ──────────────────────────────────────────────────
+target/
+
+# ── IDE ───────────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# ── Environment (Rule 14 / ADR-007) ──────────────────────────────
+# WHY: .env contains secrets. Only .env.example is committed.
+.env
 
 # ── Logs (E1-T4) ─────────────────────────────────────────────────
 # WHY: Log files are runtime artifacts, not source code.
@@ -24,3 +42,5 @@ logs/
 # ── OS artifacts ──────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+ollama/
+*.exe

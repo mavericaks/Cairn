@@ -1,4 +1,4 @@
-package com.cairn.routing;
+package com.cairn.model;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;

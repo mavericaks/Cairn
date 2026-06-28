@@ -40,11 +40,11 @@
 
 | ID | Task | Status |
 |----|------|--------|
-| E4-T1 | LocalEmbeddingModelAdapter + VectorStore Config | ⚪ |
-| E4-T2 | Document Ingestion Service + Controller | ⚪ |
-| E4-T3 | RAG Context Injection into Agents | ⚪ |
-| E4-T4 | HyDE Implementation (DiscoveryAgent) | ⚪ |
-| E4-T5 | Integration Tests + Epic 4 Walkthrough | ⚪ |
+| E4-T1 | LocalEmbeddingModelAdapter + VectorStore Config | ✅ |
+| E4-T2 | Document Ingestion Service + Controller | ✅ |
+| E4-T3 | RAG Context Injection into Agents | ✅ |
+| E4-T4 | HyDE Implementation (DiscoveryAgent) | ✅ |
+| E4-T5 | Integration Tests + Epic 4 Walkthrough | ✅ |
 
 ---
 

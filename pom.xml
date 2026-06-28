@@ -181,6 +181,20 @@
              Local Embeddings (Epic 2)
              ═══════════════════════════════════════════════════════════ -->
 
+        <!-- WHY: Spring AI PgVector store. We use this to persist document chunks and perform
+             similarity searches. Our DJL embeddings bridge into this via an Adapter. -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-pgvector-store</artifactId>
+        </dependency>
+
+        <!-- WHY: Tika Document Reader for Spring AI. Allows us to easily ingest PDF,
+             DOCX, and other rich text formats by extracting plain text for vectorization. -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-tika-document-reader</artifactId>
+        </dependency>
+
         <!-- WHY: DJL API for standard ML operations in Java. (ADR-002) -->
         <dependency>
             <groupId>ai.djl</groupId>

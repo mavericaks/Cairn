@@ -1,5 +1,6 @@
 package com.cairn.routing;
 
+import com.cairn.model.LocalEmbeddingService;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
