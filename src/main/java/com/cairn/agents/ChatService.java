@@ -2,6 +2,8 @@ package com.cairn.agents;
 
 import com.cairn.agents.dto.AgentRequest;
 import com.cairn.agents.dto.ChatRequest;
+import com.cairn.analytics.ChatCompletedEvent;
+import com.cairn.analytics.EventPublisher;
 import com.cairn.observability.Audited;
 import com.cairn.routing.DomainContextCacheService;
 import com.cairn.routing.DomainRouter;
@@ -30,18 +32,21 @@ public class ChatService {
   private final AgentOrchestrator orchestrator;
   private final DomainRouter domainRouter;
   private final DomainContextCacheService contextCache;
+  private final EventPublisher eventPublisher;
 
   public ChatService(
       ConversationRepository conversationRepository,
       MessageRepository messageRepository,
       AgentOrchestrator orchestrator,
       DomainRouter domainRouter,
-      DomainContextCacheService contextCache) {
+      DomainContextCacheService contextCache,
+      EventPublisher eventPublisher) {
     this.conversationRepository = conversationRepository;
     this.messageRepository = messageRepository;
     this.orchestrator = orchestrator;
     this.domainRouter = domainRouter;
     this.contextCache = contextCache;
+    this.eventPublisher = eventPublisher;
   }
 
   /**
@@ -115,6 +120,16 @@ public class ChatService {
       updatedContext = updatedContext.substring(updatedContext.length() - 4000);
     }
     contextCache.saveContext(userId.toString(), route.domainName(), updatedContext);
+
+    // 8. Publish analytics event to Kafka (fire-and-forget, never blocks the response)
+    eventPublisher.publishChatCompleted(
+        ChatCompletedEvent.of(
+            userId,
+            conversation.getId(),
+            route.domainName(),
+            route.score(),
+            route.latencyMs(),
+            assistantResponse));
 
     return assistantResponse;
   }
