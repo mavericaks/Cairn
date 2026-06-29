@@ -13,93 +13,91 @@ import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-/**
- * WHY: Entity representing a user in the system.
- */
+/** WHY: Entity representing a user in the system. */
 @Entity
 @Table(name = "users")
 public class User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  private UUID id;
 
-    @Column(name = "github_id", nullable = false, unique = true)
-    private String githubId;
+  @Column(name = "github_id", nullable = false, unique = true)
+  private String githubId;
 
-    @Column(name = "email")
-    private String email;
+  @Column(name = "email")
+  private String email;
 
-    @Column(name = "username", nullable = false)
-    private String username;
+  @Column(name = "username", nullable = false)
+  private String username;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role = Role.USER;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private Role role = Role.USER;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private ZonedDateTime createdAt;
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private ZonedDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private ZonedDateTime updatedAt;
+  @UpdateTimestamp
+  @Column(name = "updated_at", nullable = false)
+  private ZonedDateTime updatedAt;
 
-    public User() {}
+  public User() {}
 
-    public UUID getId() {
-        return id;
-    }
+  public UUID getId() {
+    return id;
+  }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
+  public void setId(UUID id) {
+    this.id = id;
+  }
 
-    public String getGithubId() {
-        return githubId;
-    }
+  public String getGithubId() {
+    return githubId;
+  }
 
-    public void setGithubId(String githubId) {
-        this.githubId = githubId;
-    }
+  public void setGithubId(String githubId) {
+    this.githubId = githubId;
+  }
 
-    public String getEmail() {
-        return email;
-    }
+  public String getEmail() {
+    return email;
+  }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+  public void setEmail(String email) {
+    this.email = email;
+  }
 
-    public String getUsername() {
-        return username;
-    }
+  public String getUsername() {
+    return username;
+  }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+  public void setUsername(String username) {
+    this.username = username;
+  }
 
-    public Role getRole() {
-        return role;
-    }
+  public Role getRole() {
+    return role;
+  }
 
-    public void setRole(Role role) {
-        this.role = role;
-    }
+  public void setRole(Role role) {
+    this.role = role;
+  }
 
-    public ZonedDateTime getCreatedAt() {
-        return createdAt;
-    }
+  public ZonedDateTime getCreatedAt() {
+    return createdAt;
+  }
 
-    public void setCreatedAt(ZonedDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+  public void setCreatedAt(ZonedDateTime createdAt) {
+    this.createdAt = createdAt;
+  }
 
-    public ZonedDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+  public ZonedDateTime getUpdatedAt() {
+    return updatedAt;
+  }
 
-    public void setUpdatedAt(ZonedDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
+  public void setUpdatedAt(ZonedDateTime updatedAt) {
+    this.updatedAt = updatedAt;
+  }
 }

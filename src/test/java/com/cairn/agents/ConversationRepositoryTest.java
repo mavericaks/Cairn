@@ -6,9 +6,7 @@ import com.cairn.TestcontainersConfig;
 import com.cairn.routing.Domain;
 import com.cairn.routing.DomainRepository;
 import com.cairn.security.Role;
-import com.cairn.security.User;
 import com.cairn.security.UserRepository;
-import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 /**
@@ -43,10 +42,14 @@ class ConversationRepositoryTest {
   void setUp() {
     testUserId = UUID.randomUUID();
     jdbcTemplate.update(
-        "INSERT INTO users (id, github_id, email, username, role, created_at, updated_at) " +
-        "VALUES (?, ?, ?, ?, CAST(? AS user_role), now(), now())",
-        testUserId, "github-" + testUserId, "test-" + testUserId + "@example.com", "testuser-" + testUserId, Role.USER.name());
-    
+        "INSERT INTO users (id, github_id, email, username, role, created_at, updated_at) "
+            + "VALUES (?, ?, ?, ?, CAST(? AS user_role), now(), now())",
+        testUserId,
+        "github-" + testUserId,
+        "test-" + testUserId + "@example.com",
+        "testuser-" + testUserId,
+        Role.USER.name());
+
     testDomain =
         domainRepository.findAll().stream()
             .findFirst()

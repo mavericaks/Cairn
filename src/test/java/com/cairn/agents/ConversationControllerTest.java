@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.cairn.TestcontainersConfig;
+import com.cairn.security.Role;
+import com.cairn.security.UserRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,13 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.web.servlet.MockMvc;
-
-import com.cairn.security.Role;
-import com.cairn.security.User;
-import com.cairn.security.UserRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -38,13 +36,17 @@ class ConversationControllerTest {
   void setUp() {
     conversationRepository.deleteAll();
     userRepository.deleteAll();
-    
+
     testUserId = UUID.fromString("00000000-0000-0000-0000-000000000001");
     jdbcTemplate.update(
-        "INSERT INTO users (id, github_id, email, username, role, created_at, updated_at) " +
-        "VALUES (?, ?, ?, ?, CAST(? AS user_role), now(), now())",
-        testUserId, "12345", "test@example.com", "testuser", Role.USER.name());
-    
+        "INSERT INTO users (id, github_id, email, username, role, created_at, updated_at) "
+            + "VALUES (?, ?, ?, ?, CAST(? AS user_role), now(), now())",
+        testUserId,
+        "12345",
+        "test@example.com",
+        "testuser",
+        Role.USER.name());
+
     testConversation = new Conversation(testUserId);
     testConversation.setTitle("Test History");
     testConversation.addMessage(new Message(MessageRole.USER, "First message"));
@@ -67,8 +69,7 @@ class ConversationControllerTest {
   @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = "USER")
   void shouldReturnPaginatedMessagesForConversation() throws Exception {
     mockMvc
-        .perform(
-            get("/api/v1/conversations/" + testConversation.getId() + "/messages"))
+        .perform(get("/api/v1/conversations/" + testConversation.getId() + "/messages"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data").isArray())
         .andExpect(jsonPath("$.data.length()").value(2))
@@ -82,8 +83,7 @@ class ConversationControllerTest {
     UUID otherUserId = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
     mockMvc
-        .perform(
-            get("/api/v1/conversations/" + testConversation.getId() + "/messages"))
+        .perform(get("/api/v1/conversations/" + testConversation.getId() + "/messages"))
         .andExpect(
             status()
                 .isInternalServerError()); // GlobalExceptionHandler will map IllegalStateException
@@ -98,8 +98,7 @@ class ConversationControllerTest {
   @WithMockUser(username = "00000000-0000-0000-0000-000000000001", roles = "USER")
   void shouldDeleteConversation() throws Exception {
     mockMvc
-        .perform(
-            delete("/api/v1/conversations/" + testConversation.getId()))
+        .perform(delete("/api/v1/conversations/" + testConversation.getId()))
         .andExpect(status().isNoContent());
 
     mockMvc
