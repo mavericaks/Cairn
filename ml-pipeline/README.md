@@ -1,189 +1,133 @@
 # Cairn ML Pipeline — Custom LLM Fine-Tuning
 
-This directory contains the complete pipeline to fine-tune Meta's Llama-3.2-1B 
-on Cairn's 6 domain-specific datasets using LoRA (Low-Rank Adaptation), then 
-export to GGUF format for local inference via Ollama.
+This directory contains the **complete, from-scratch ML pipeline** for Cairn's domain-specific language models. We don't use a pre-built model — we write the transformer architecture by hand, inject LoRA adapters, train on domain-specific datasets, and export as GGUF for Ollama.
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                    Training Pipeline                      │
-│                                                          │
-│  HuggingFace Hub          Custom Architecture            │
-│  (Llama-3.2-1B)    ──→    (model.py)                    │
-│       │                       │                          │
-│       ▼                       ▼                          │
-│  loader.py            lora.py (inject LoRA)              │
-│       │                       │                          │
-│       └──────────┬────────────┘                          │
-│                  ▼                                        │
-│            train.py                                       │
-│    (Fine-tune on domain JSONL data)                      │
-│                  │                                        │
-│                  ▼                                        │
-│     adapters/{domain}_lora.pt                            │
-│                  │                                        │
-│                  ▼                                        │
-│            export.py                                      │
-│    (Merge LoRA → HF save_pretrained)                     │
-│                  │                                        │
-│                  ▼                                        │
-│       exported_models/{domain}/                          │
-│    (model.safetensors + config.json)                     │
-│                  │                                        │
-│                  ▼                                        │
-│         export_to_gguf.sh                                │
-│    (llama.cpp → Q4_K_M quantization)                     │
-│                  │                                        │
-│                  ▼                                        │
-│     cairn-{domain}.gguf → Ollama                         │
-└──────────────────────────────────────────────────────────┘
+┌─────────────────┐     ┌──────────────┐     ┌──────────────┐
+│  model.py       │     │  lora.py     │     │  loader.py   │
+│  Custom Llama-3 │────▶│  LoRA inject │────▶│  Load HF     │
+│  Transformer    │     │  A, B matrix │     │  safetensors  │
+│  (from scratch) │     │  rank 16     │     │              │
+└─────────────────┘     └──────────────┘     └──────────────┘
+                                │
+                                ▼
+┌─────────────────┐     ┌──────────────┐     ┌──────────────┐
+│ generate_        │     │  train.py    │     │  export.py   │
+│ dataset.py      │────▶│  LoRA train  │────▶│  Merge B×A   │
+│ 1200+ examples  │     │  T4 GPU      │     │  → HF format │
+│ 6 domains       │     │  ~30min/dom  │     │  → GGUF      │
+└─────────────────┘     └──────────────┘     └──────────────┘
+                                                     │
+                                                     ▼
+                                              ┌──────────────┐
+                                              │  Ollama      │
+                                              │  cairn-*     │
+                                              │  models      │
+                                              └──────────────┘
 ```
 
-## Prerequisites
+## Files
 
-### 1. Hardware
-- **GPU**: NVIDIA GPU with ≥4GB VRAM (GTX 1650 works with batch_size=1)
-- **RAM**: ≥16GB system RAM
-- **Disk**: ≥10GB free (for model weights)
+| File | Lines | Purpose |
+|------|-------|---------|
+| `model.py` | 194 | Custom Llama-3 Transformer: RoPE, GQA, SwiGLU, RMSNorm |
+| `lora.py` | ~120 | LoRA adapter injection into q_proj, v_proj |
+| `loader.py` | ~100 | Load Llama-3.2-1B weights from HuggingFace safetensors |
+| `train.py` | ~220 | Training loop: mixed precision, gradient accumulation, cosine LR |
+| `export.py` | ~100 | Merge LoRA weights → save as HuggingFace format |
+| `generate_dataset.py` | ~600 | Generate 1,200+ domain-specific instruction-completion pairs |
+| `cairn_training.ipynb` | — | Google Colab notebook (run this!) |
 
-### 2. Software
-```bash
-# Python 3.10+
-python --version
+## How LoRA Works
 
-# CUDA toolkit (must match your PyTorch CUDA version)
-nvcc --version
+```
+Standard:  W_new = W_old + ΔW                     (ΔW has millions of params)
+LoRA:      W_new = W_old + B × A                   (B and A are low-rank, tiny)
 
-# Ollama (for inference)
-ollama --version
+Where:
+  W_old = Llama-3.2-1B base weights (FROZEN — 1.24B params, never touched)
+  A     = Low-rank matrix (dim × rank=16), initialized randomly
+  B     = Low-rank matrix (rank=16 × dim), initialized to zero
+  
+During training: Only A and B are updated (~3M params = 0.24% of total)
+After training:  W_final = W_old + (B × A) — merged into single tensor
 ```
 
-### 3. HuggingFace Token
-```bash
-# 1. Create account at https://huggingface.co
-# 2. Go to https://huggingface.co/settings/tokens → Create token (read access)
-# 3. Accept the Llama 3.2 license at:
-#    https://huggingface.co/meta-llama/Llama-3.2-1B
-# 4. Set the token:
-export HF_TOKEN=hf_your_token_here
-```
+## Training Datasets
 
-## Step-by-Step Guide
+Generated by `generate_dataset.py`. Each domain gets 100-250 examples:
+
+| Domain | Examples | Focus | Key Patterns |
+|--------|----------|-------|-------------|
+| **Analytical** | 250 | SQL generation | JOINs, CTEs, window functions, aggregation |
+| **Execution** | 200 | Tool calling | Math, timezones, SQL execution, multi-tool |
+| **Discovery** | 200 | RAG Q&A | Grounded answers, citations, "I don't know" |
+| **Generative** | 200 | Content creation | Emails, code, docs, design patterns |
+| **Conversational** | 200 | Explanations | CS fundamentals, system design, analogies |
+| **System** | 150 | Platform help | Cairn features, troubleshooting, onboarding |
+
+## Quick Start — Google Colab
+
+**Recommended**: Use the Colab notebook for training.
+
+1. Upload `cairn_training.ipynb` to Google Colab
+2. Set runtime to **T4 GPU**
+3. Run all cells
+4. Download the `cairn-models.zip` file
+5. Unzip and register with Ollama (see below)
+
+## Manual Training (Local GPU)
+
+### Prerequisites
+- Python 3.10+
+- CUDA-capable GPU (T4 16GB or GTX 1650 4GB)
+- HuggingFace token with [Llama 3.2 access](https://huggingface.co/meta-llama/Llama-3.2-1B)
 
 ### Step 1: Install Dependencies
-
 ```bash
 cd ml-pipeline
 pip install -r requirements.txt
 ```
 
-### Step 2: Verify GPU Access
-
+### Step 2: Set Environment
 ```bash
-python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}'); print(f'GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"None\"}')"
+export HF_TOKEN=hf_your_token_here
 ```
 
-Expected output:
-```
-CUDA available: True
-GPU: NVIDIA GeForce GTX 1650
-```
-
-### Step 3: Train a Domain-Specific LoRA Adapter
-
-Train one domain at a time. Each takes ~10-30 minutes on a GTX 1650.
-
+### Step 3: Generate Datasets
 ```bash
-# Train the analytical domain (SQL generation)
-python train.py \
-  --domain analytical \
-  --dataset data/dummy_analytical.jsonl \
-  --epochs 3 \
-  --batch_size 1 \
-  --lr 2e-4
-
-# Train the execution domain (tool calling)
-python train.py \
-  --domain execution \
-  --dataset data/execution.jsonl \
-  --epochs 3 \
-  --batch_size 1 \
-  --lr 2e-4
-
-# Train the discovery domain (document Q&A)
-python train.py \
-  --domain discovery \
-  --dataset data/discovery.jsonl \
-  --epochs 3 \
-  --batch_size 1 \
-  --lr 2e-4
+python generate_dataset.py --output_dir data
 ```
 
-Output: `adapters/{domain}_lora.pt`
-
-### Step 4: Export to HuggingFace Format
-
+### Step 4: Train (per domain, ~30 min each on T4)
 ```bash
-python export.py \
-  --domain analytical \
-  --adapter_path adapters/analytical_lora.pt
+# T4 GPU (16GB VRAM) — batch_size=4, grad_accum=4
+python train.py --domain analytical --dataset data/analytical.jsonl \
+    --epochs 5 --batch_size 4 --grad_accum 4 --lr 2e-4
+
+# GTX 1650 (4GB VRAM) — batch_size=1, grad_accum=8
+python train.py --domain analytical --dataset data/analytical.jsonl \
+    --epochs 5 --batch_size 1 --grad_accum 8 --lr 2e-4
 ```
 
-Output: `exported_models/analytical/` (contains `model.safetensors`, `config.json`, `tokenizer.json`)
-
-### Step 5: Convert to GGUF for Ollama
-
+### Step 5: Export
 ```bash
-# Clone llama.cpp (one-time setup)
-git clone https://github.com/ggerganov/llama.cpp.git
-cd llama.cpp && pip install -r requirements.txt && cd ..
-
-# Convert and quantize
-bash export_to_gguf.sh exported_models/analytical cairn-analytical
+python export.py --domain analytical --adapter_path adapters/analytical_lora.pt
 ```
 
-### Step 6: Register with Ollama
-
-Create a Modelfile for the domain:
-
+### Step 6: Convert to GGUF
 ```bash
-cat > Modelfile.analytical << 'EOF'
-FROM ./cairn-analytical.gguf
-
-PARAMETER temperature 0.7
-PARAMETER num_predict 1024
-
-SYSTEM """You are an expert data analyst AI assistant. You specialize in:
-1. Writing SQL queries for PostgreSQL databases
-2. Analyzing data trends and patterns
-3. Performing statistical calculations
-4. Creating data summaries and reports
-
-When asked to write SQL, always wrap it in a ```sql code block.
-Use CTEs for complex queries. Mention performance considerations."""
-EOF
-
-ollama create cairn-analytical -f Modelfile.analytical
+# Requires llama.cpp
+python llama.cpp/convert_hf_to_gguf.py exports/cairn-analytical --outfile gguf/cairn-analytical-f16.gguf --outtype f16
+llama.cpp/quantize gguf/cairn-analytical-f16.gguf gguf/cairn-analytical-q4_k_m.gguf Q4_K_M
 ```
 
-### Step 7: Test the Model
-
+### Step 7: Register with Ollama
 ```bash
-ollama run cairn-analytical "Write a SQL query to find the top 5 customers by lifetime value"
-```
-
-## Quick Start (Without Fine-Tuning)
-
-If you want to skip training and just use the base model with custom system prompts:
-
-```bash
-# Pull the base model
-ollama pull llama3.2:1b
-
-# Create domain-specific Modelfiles (system prompts only, no fine-tuning)
-# These are in the ollama/ directory
+# Copy GGUF to the ollama directory, then:
+cd ml-pipeline
 ollama create cairn-analytical -f ollama/Modelfile.analytical
 ollama create cairn-execution -f ollama/Modelfile.execution
 ollama create cairn-discovery -f ollama/Modelfile.discovery
@@ -192,53 +136,35 @@ ollama create cairn-conversational -f ollama/Modelfile.conversational
 ollama create cairn-system -f ollama/Modelfile.system
 ```
 
-## Training Datasets
-
-| Domain | File | Examples | Focus |
-|--------|------|----------|-------|
-| Analytical | `data/dummy_analytical.jsonl` | 8 | SQL generation, data analysis |
-| Execution | `data/execution.jsonl` | 7 | Tool calling, math, time |
-| Discovery | `data/discovery.jsonl` | 3 | Document Q&A, knowledge search |
-| Generative | `data/generative.jsonl` | 4 | Email writing, code generation |
-| Conversational | `data/conversational.jsonl` | 4 | General explanations |
-| System | `data/system.jsonl` | 4 | Platform help, capabilities |
-
-### Dataset Format (JSONL)
-```json
-{"prompt": "User's question or request", "completion": "The ideal assistant response"}
+### Step 8: Verify
+```bash
+ollama run cairn-analytical "Show me top 5 customers by revenue"
 ```
 
-### Expanding Datasets
-To improve model quality, add more examples to each JSONL file. Aim for:
-- **50+ examples** per domain for noticeable behavioral differences
-- **Diverse prompts** covering edge cases and variations
-- **High-quality completions** that match the style you want the model to produce
+## Training Hyperparameters
 
-## File Descriptions
+| Parameter | T4 (16GB) | GTX 1650 (4GB) |
+|-----------|-----------|----------------|
+| batch_size | 4 | 1 |
+| grad_accum | 4 | 8 |
+| effective_batch | 16 | 8 |
+| max_length | 512 | 256 |
+| lr | 2e-4 | 2e-4 |
+| scheduler | cosine + warmup | cosine + warmup |
+| precision | fp16 | fp16 |
+| epochs | 5 | 5 |
+| lora_rank | 16 | 16 |
+| lora_alpha | 32 | 32 |
+| est. time/domain | ~30 min | ~45 min |
+| peak VRAM | ~10 GB | ~3.5 GB |
 
-| File | Purpose |
-|------|---------|
-| `model.py` | Custom Llama-3 architecture (RMSNorm, RoPE, GQA, SwiGLU) |
-| `loader.py` | Downloads base weights from HuggingFace, maps to custom model |
-| `lora.py` | LoRA linear layer implementation, injection, and weight merging |
-| `train.py` | Training loop with proper prompt masking (labels=-100 for prompt tokens) |
-| `export.py` | Merges LoRA adapters and exports to HF format for llama.cpp |
-| `export_to_gguf.sh` | Converts HF model → GGUF with Q4_K_M quantization |
+## File Size Reference
 
-## Key Technical Decisions
-
-### Why LoRA instead of Full Fine-Tuning?
-- A 1B parameter model has ~2GB of weights
-- Full fine-tuning requires ~8GB+ VRAM (optimizer states + gradients)
-- LoRA freezes 99.8% of weights, only training ~2M parameters
-- Fits on a 4GB VRAM GPU (GTX 1650)
-
-### Why Custom Architecture (model.py) instead of just HuggingFace?
-- Demonstrates deep understanding of transformer internals
-- Shows you can implement RoPE, GQA, RMSNorm, and SwiGLU from scratch
-- Required knowledge for any ML engineering role
-
-### Why Q4_K_M Quantization?
-- Reduces model size from ~2GB → ~700MB
-- Minimal quality loss (4-bit with importance-weighted groups)
-- Fast inference on CPU+GPU with Ollama
+| Artifact | Size | Format |
+|----------|------|--------|
+| Base model (Llama-3.2-1B) | ~2.5 GB | safetensors (HF cache) |
+| LoRA adapter (per domain) | ~12 MB | PyTorch state_dict |
+| Merged model (per domain) | ~2.5 GB | safetensors |
+| GGUF f16 (per domain) | ~2 GB | GGUF |
+| GGUF Q4_K_M (per domain) | ~700 MB | GGUF (4-bit quantized) |
+| Total Ollama storage (6 domains) | ~4.2 GB | GGUF Q4_K_M |

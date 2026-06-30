@@ -1,5 +1,16 @@
-torch>=2.2.0
+# Cairn ML Pipeline — Python Dependencies
+# Install: pip install -r requirements.txt
+
+# Core ML
+torch>=2.0.0
 transformers>=4.40.0
-safetensors>=0.4.2
-datasets>=2.18.0
-tqdm>=4.66.2
+safetensors>=0.4.0
+
+# Training
+tqdm>=4.60.0
+
+# HuggingFace auth (for downloading Llama 3.2)
+huggingface_hub>=0.20.0
+
+# Dataset generation
+# No extra deps — uses stdlib json, random, argparse
