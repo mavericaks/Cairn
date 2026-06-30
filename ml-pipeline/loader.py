@@ -1,87 +1,114 @@
+"""
+loader.py — Loads Llama-3.2-1B pretrained weights into our custom architecture.
+
+Two modes:
+  1. Training mode: Uses HuggingFace's AutoModel to download weights, then maps
+     them into our custom LlamaForCausalLM. Our custom model is used for training
+     so we can demonstrate we understand the architecture.
+  2. Structural test: If HF_TOKEN is not set, returns a randomly initialized model
+     so you can verify the code runs without needing to download 2.5GB.
+"""
+
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from model import LlamaForCausalLM, LlamaConfig
 import os
+import gc
 
-def load_llama_weights(custom_model, hf_model):
+
+def load_weights_from_hf(custom_model, hf_model_name, hf_token):
     """
-    Map weights from HuggingFace's implementation to our custom Llama model.
-    This demonstrates understanding of the exact tensor structure of Llama 3.
+    Downloads HuggingFace model, copies weights into our custom architecture,
+    then immediately deletes the HF model to free memory.
     """
-    print("Mapping HuggingFace weights to custom architecture...")
-    custom_state_dict = custom_model.state_dict()
-    hf_state_dict = hf_model.state_dict()
-    
-    # Map token embeddings
-    custom_state_dict['model.embed_tokens.weight'] = hf_state_dict['model.embed_tokens.weight']
-    
-    # Map layers
-    num_layers = custom_model.model.config.num_hidden_layers
+    print(f"  Downloading {hf_model_name} from HuggingFace...")
+    hf_model = AutoModelForCausalLM.from_pretrained(
+        hf_model_name,
+        token=hf_token,
+        torch_dtype=torch.float32,  # Keep float32 for training stability
+        low_cpu_mem_usage=True,     # Load weights sequentially to reduce peak RAM
+    )
+
+    hf_sd = hf_model.state_dict()
+    custom_sd = custom_model.state_dict()
+
+    print("  Mapping HuggingFace weights → custom architecture...")
+
+    # Token embeddings
+    custom_sd["model.embed_tokens.weight"] = hf_sd["model.embed_tokens.weight"]
+
+    # Per-layer weights
+    num_layers = custom_model.config.num_hidden_layers
     for i in range(num_layers):
-        prefix_c = f"model.layers.{i}."
-        prefix_h = f"model.layers.{i}."
-        
-        # Attention
-        custom_state_dict[f"{prefix_c}self_attn.q_proj.weight"] = hf_state_dict[f"{prefix_h}self_attn.q_proj.weight"]
-        custom_state_dict[f"{prefix_c}self_attn.k_proj.weight"] = hf_state_dict[f"{prefix_h}self_attn.k_proj.weight"]
-        custom_state_dict[f"{prefix_c}self_attn.v_proj.weight"] = hf_state_dict[f"{prefix_h}self_attn.v_proj.weight"]
-        custom_state_dict[f"{prefix_c}self_attn.o_proj.weight"] = hf_state_dict[f"{prefix_h}self_attn.o_proj.weight"]
-        
-        # MLP
-        custom_state_dict[f"{prefix_c}mlp.gate_proj.weight"] = hf_state_dict[f"{prefix_h}mlp.gate_proj.weight"]
-        custom_state_dict[f"{prefix_c}mlp.up_proj.weight"] = hf_state_dict[f"{prefix_h}mlp.up_proj.weight"]
-        custom_state_dict[f"{prefix_c}mlp.down_proj.weight"] = hf_state_dict[f"{prefix_h}mlp.down_proj.weight"]
-        
+        p = f"model.layers.{i}."
+        # Attention projections
+        for proj in ["q_proj", "k_proj", "v_proj", "o_proj"]:
+            custom_sd[f"{p}self_attn.{proj}.weight"] = hf_sd[f"{p}self_attn.{proj}.weight"]
+        # MLP projections
+        for proj in ["gate_proj", "up_proj", "down_proj"]:
+            custom_sd[f"{p}mlp.{proj}.weight"] = hf_sd[f"{p}mlp.{proj}.weight"]
         # LayerNorms
-        custom_state_dict[f"{prefix_c}input_layernorm.weight"] = hf_state_dict[f"{prefix_h}input_layernorm.weight"]
-        custom_state_dict[f"{prefix_c}post_attention_layernorm.weight"] = hf_state_dict[f"{prefix_h}post_attention_layernorm.weight"]
-        
-    # Map final layernorm
-    custom_state_dict['model.norm.weight'] = hf_state_dict['model.norm.weight']
-    
-    # Map LM head
-    custom_state_dict['lm_head.weight'] = hf_state_dict['lm_head.weight']
-    
-    custom_model.load_state_dict(custom_state_dict)
-    print("Weights successfully loaded!")
+        custom_sd[f"{p}input_layernorm.weight"] = hf_sd[f"{p}input_layernorm.weight"]
+        custom_sd[f"{p}post_attention_layernorm.weight"] = hf_sd[f"{p}post_attention_layernorm.weight"]
+
+    # Final norm + LM head
+    custom_sd["model.norm.weight"] = hf_sd["model.norm.weight"]
+    custom_sd["lm_head.weight"] = hf_sd["lm_head.weight"]
+
+    custom_model.load_state_dict(custom_sd)
+    print(f"  Loaded {len(custom_sd)} weight tensors successfully.")
+
+    # Free HF model memory immediately
+    del hf_model, hf_sd
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
     return custom_model
 
+
 def get_pretrained_model(model_name="meta-llama/Llama-3.2-1B"):
+    """
+    Returns (model, tokenizer). If HF_TOKEN is not set, returns (model, None)
+    with random weights for structural testing only.
+    """
     print("Initializing custom Llama-3.2-1B architecture...")
     config = LlamaConfig()
     custom_model = LlamaForCausalLM(config)
-    
+
+    total_params = sum(p.numel() for p in custom_model.parameters())
+    print(f"  Parameters: {total_params / 1e9:.2f}B")
+
     hf_token = os.environ.get("HF_TOKEN")
-    
-    try:
-        if not hf_token:
-            print("Warning: HF_TOKEN not found. You must be authenticated to download Llama 3 weights.")
-            print("To actually train, run: huggingface-cli login")
-            print("For now, returning randomly initialized custom model for structural testing.")
-            return custom_model, None
-            
-        print(f"Downloading/loading base weights for {model_name}...")
-        hf_model = AutoModelForCausalLM.from_pretrained(model_name, token=hf_token)
-        tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
-        
-        # We need a padding token for batched training
-        if tokenizer.pad_token is None:
-            tokenizer.pad_token = tokenizer.eos_token
-            
-        custom_model = load_llama_weights(custom_model, hf_model)
-        
-        # Free up memory
-        del hf_model
-        import gc
-        gc.collect()
-        
-        return custom_model, tokenizer
-    except Exception as e:
-        print(f"Failed to load HuggingFace weights: {e}")
-        print("Returning randomly initialized custom model for structural testing.")
+
+    if not hf_token:
+        print("WARNING: HF_TOKEN not set. Returning randomly initialized model.")
+        print("  Set HF_TOKEN to download real Llama-3.2-1B weights.")
         return custom_model, None
 
+    try:
+        custom_model = load_weights_from_hf(custom_model, model_name, hf_token)
+
+        print(f"  Loading tokenizer from {model_name}...")
+        tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+            tokenizer.pad_token_id = tokenizer.eos_token_id
+
+        return custom_model, tokenizer
+
+    except Exception as e:
+        print(f"ERROR loading weights: {e}")
+        print("Returning randomly initialized model.")
+        return custom_model, None
+
+
 if __name__ == "__main__":
-    # Test loading
     model, tokenizer = get_pretrained_model()
-    print(f"Model parameters: {sum(p.numel() for p in model.parameters()) / 1e9:.2f}B")
+    print(f"\nModel loaded: {sum(p.numel() for p in model.parameters()) / 1e9:.2f}B parameters")
+    if tokenizer:
+        print(f"Tokenizer vocab: {tokenizer.vocab_size}")
+        test = tokenizer("Hello world", return_tensors="pt")
+        print(f"Test tokenization: {test['input_ids'].shape}")
+    else:
+        print("No tokenizer (HF_TOKEN not set)")
