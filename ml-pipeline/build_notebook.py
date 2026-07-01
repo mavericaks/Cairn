@@ -40,7 +40,7 @@ cells.append(make_code_cell([
     "print('CUDA available:', torch.cuda.is_available())\n",
     "if torch.cuda.is_available():\n",
     "    print('GPU:', torch.cuda.get_device_name(0))\n",
-    "    mem_gb = torch.cuda.get_device_properties(0).total_mem / (1024**3)\n",
+    "    mem_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)\n",
     "    print(f'VRAM: {mem_gb:.1f} GB')\n",
     "else:\n",
     "    print('WARNING: No GPU detected.')\n",
