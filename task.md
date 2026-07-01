@@ -80,12 +80,12 @@
 > **Note:** We are executing Epic 7 in parallel with the Java backend to speed up the massive ML training workload.
 | ID | Task | Status |
 |----|------|--------|
-| E7-T1 | Write `model.py`: Pure PyTorch Llama-3 architecture | ⚪ |
-| E7-T2 | Write `loader.py`: HuggingFace safetensors state dict mapping | ⚪ |
-| E7-T3 | Write `lora.py`: Custom Low-Rank Adaptation injection | ⚪ |
-| E7-T4 | Write `train.py`: The PyTorch training loop | ⚪ |
-| E7-T5 | Write `export.py`: Merge adapters and compile to GGUF | ⚪ |
-| E7-T6 | Orchestrate dynamic loading in Spring Boot | ⚪ |
+| E7-T1 | Write `model.py`: Pure PyTorch Llama-3 architecture | ✅ |
+| E7-T2 | Write `loader.py`: HuggingFace safetensors state dict mapping | ✅ |
+| E7-T3 | Write `lora.py`: Custom Low-Rank Adaptation injection | ✅ |
+| E7-T4 | Write `train.py`: The PyTorch training loop | ✅ |
+| E7-T5 | Write `export.py`: Merge adapters and compile to GGUF | ✅ |
+| E7-T6 | Orchestrate dynamic loading in Spring Boot | ✅ |
 
 ---
 

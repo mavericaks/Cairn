@@ -52,6 +52,10 @@ public abstract class AbstractDomainAgent implements DomainAgent {
 
     return chatClient
         .prompt()
+        .options(
+            org.springframework.ai.ollama.api.OllamaChatOptions.builder()
+                .model("cairn-" + getDomainName())
+                .build())
         .system(s -> s.text(getSystemPrompt() + "\n\nContext:\n" + context))
         .user(request.messageContent())
         .toolNames(tools) // Enable specific tools for this agent
