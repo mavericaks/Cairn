@@ -49,7 +49,7 @@ cells.append(make_code_cell([
 
 # Cell 2: Install deps
 cells.append(make_code_cell([
-    "!pip install -q transformers safetensors tqdm huggingface_hub"
+    "!pip install -q transformers safetensors tqdm huggingface_hub --upgrade protobuf"
 ]))
 
 # Cell 3: Clone repo
