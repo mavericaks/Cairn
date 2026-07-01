@@ -25,7 +25,7 @@ def load_weights_from_hf(custom_model, hf_model_name, hf_token):
     hf_model = AutoModelForCausalLM.from_pretrained(
         hf_model_name,
         token=hf_token,
-        torch_dtype=torch.float32,  # Keep float32 for training stability
+        torch_dtype=torch.float16,  # Use float16 to prevent System RAM swap freezing
         low_cpu_mem_usage=True,     # Load weights sequentially to reduce peak RAM
     )
 
@@ -56,7 +56,8 @@ def load_weights_from_hf(custom_model, hf_model_name, hf_token):
     custom_sd["lm_head.weight"] = hf_sd["lm_head.weight"]
 
     custom_model.load_state_dict(custom_sd)
-    print(f"  Loaded {len(custom_sd)} weight tensors successfully.")
+    custom_model = custom_model.to(torch.float16)
+    print(f"  Loaded {len(custom_sd)} weight tensors successfully (float16).")
 
     # Free HF model memory immediately
     del hf_model, hf_sd
