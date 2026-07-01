@@ -49,7 +49,7 @@ cells.append(make_code_cell([
 
 # Cell 2: Install deps
 cells.append(make_code_cell([
-    "!pip install -q transformers safetensors tqdm huggingface_hub --upgrade protobuf"
+    "!pip install -q transformers safetensors tqdm huggingface_hub tiktoken gguf sentencepiece --upgrade protobuf tokenizers"
 ]))
 
 # Cell 3: Clone repo
@@ -209,8 +209,6 @@ cells.append(make_code_cell([
     "import os\n",
     "if not os.path.exists('/content/llama_cpp'):\n",
     "    !git clone --depth 1 https://github.com/ggerganov/llama.cpp /content/llama_cpp\n",
-    "!pip install -q -r /content/llama_cpp/requirements/requirements-convert_hf_to_gguf.txt 2>/dev/null || pip install -q gguf\n",
-    "\n",
     "os.makedirs('gguf', exist_ok=True)\n",
     "\n",
     "DOMAINS = ['analytical', 'execution', 'discovery', 'generative', 'conversational', 'system']\n",
