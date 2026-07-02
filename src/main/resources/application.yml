@@ -53,7 +53,7 @@ spring:
   # compatibility, defaulting to localhost for dev (ADR-004, Rule 14).
   data:
     redis:
-      url: ${REDIS_URL:redis://localhost:6379}
+      url: ${REDIS_URL:redis://:password@localhost:6379}
 
   # ── Flyway Schema Migrations (E1-T3) ────────────────────────────
   flyway:
@@ -63,12 +63,37 @@ spring:
     # WHY: Standard Maven/Gradle resource location for migration SQL files.
     locations: classpath:db/migration
 
-  # ── Spring AI (Epic 2+ will configure) ──────────────────────────
-  # ai.openai configuration deferred to Epic 2.
+  # ── Security (E6-T1) ──────────────────────────────────────────────
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${GITHUB_CLIENT_ID:mock-client-id}
+            client-secret: ${GITHUB_CLIENT_SECRET:mock-client-secret}
 
-  # WHY: Exclude auto-configurations for subsystems not yet wired.
-  # DB exclusions removed in E1-T3 (datasource/JPA/Flyway now configured).
-  # Spring AI exclusions remain until Epic 2 provides API keys.
+  # ── Spring AI ──────────────────────────────────────────────────
+  ai:
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        model: ${OLLAMA_MODEL:llama3.2:1b}
+        options:
+          temperature: 0.7
+          num-predict: 1024
+
+  # ── Kafka ─────────────────────────────────────────────────────
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: cairn-tools-group
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+  # WHY: Exclude auto-configurations for OpenAI (we use Ollama locally).
+  # These prevent startup failures when no OpenAI API key is configured.
   autoconfigure:
     exclude:
       - org.springframework.ai.model.openai.autoconfigure.OpenAiChatAutoConfiguration
@@ -117,6 +142,10 @@ cairn:
     model-url: djl://ai.djl.huggingface.pytorch/sentence-transformers/all-MiniLM-L6-v2
     engine: PyTorch
     dimensions: 384
+  jwt:
+    # WHY: HMAC256 secret for signing JWTs. MUST be overridden in production via env var.
+    secret: ${JWT_SECRET:cairn-dev-secret-change-me-in-production-minimum-32-chars}
+    expiration-hours: ${JWT_EXPIRATION_HOURS:24}
 
 # ── Server ────────────────────────────────────────────────────────
 server:

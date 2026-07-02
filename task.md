@@ -11,12 +11,12 @@
 
 | Field | Value |
 |-------|-------|
-| Epic Number | 4 |
-| Epic Title | The RAG Pipeline |
-| Capability | Retrieval-Augmented Generation — agents inject document context into LLM prompts for factual answers |
-| Interview Story | "I built a document ingestion pipeline that chunks uploads, embeds them locally on CPU, stores them in pgvector, and retrieves relevant context at query time to ground LLM responses in real facts." |
+| Epic Number | 6 |
+| Epic Title | Security Hardening |
+| Capability | Secure the API using OAuth2 (GitHub), JWT, and Role-Based Access Control |
+| Interview Story | "I secured the platform by implementing OAuth2 login with GitHub, issuing custom JWTs, and enforcing strict Role-Based Access Control across all Spring Modulith boundaries." |
 | Status | 🟢 ACTIVE |
-| Definition of Done | Upload a document, ask a question about it, and receive an accurate answer grounded in the document's content. |
+| Definition of Done | All endpoints require authentication. Admin endpoints require ROLE_ADMIN. Users can log in via GitHub OAuth2. |
 
 ---
 
@@ -36,7 +36,7 @@
 
 ---
 
-## Epic 4 Task Board
+## Epic 4 Task Board (✅ COMPLETED)
 
 | ID | Task | Status |
 |----|------|--------|
@@ -48,16 +48,44 @@
 
 ---
 
+## Epic 5 Task Board (✅ COMPLETED)
+
+| ID | Task | Status |
+|----|------|--------|
+| E5-T1 | Add Kafka to docker-compose and Spring Kafka to pom.xml | ✅ |
+| E5-T2 | Create V5__tool_executions.sql migration | ✅ |
+| E5-T3 | Create Tools module structure (ToolExecutionService, Safe/Unsafe configs) | ✅ |
+| E5-T4 | Implement Kafka Event Consumers for HITL Approval | ✅ |
+| E5-T5 | Build ToolApprovalController (REST API) | ✅ |
+| E5-T6 | Wire Agent tools to DomainRouter and prompt building | ✅ |
+| E5-T7 | Integration Testing & Epic 5 Walkthrough | ✅ |
+
+---
+
+## Epic 6 Task Board
+
+| ID | Task | Status |
+|----|------|--------|
+| E6-T1 | Add Spring Security + OAuth2 + JWT dependencies | ✅ |
+| E6-T2 | Create V6__users_and_security.sql migration | ✅ |
+| E6-T3 | Implement User entity, Role enum, and UserRepository | ✅ |
+| E6-T4 | Build JwtService for token generation and validation | ✅ |
+| E6-T5 | Configure SecurityConfig, JwtAuthenticationFilter, and OAuth2LoginSuccessHandler | ✅ |
+| E6-T6 | Implement UserController and apply @PreAuthorize annotations | ✅ |
+| E6-T7 | Integration Testing & Epic 6 Walkthrough | ✅ |
+
+---
+
 ## Epic 7 Task Board (Parallel Side-Quest)
 > **Note:** We are executing Epic 7 in parallel with the Java backend to speed up the massive ML training workload.
 | ID | Task | Status |
 |----|------|--------|
-| E7-T1 | Write `model.py`: Pure PyTorch Llama-3 architecture | ⚪ |
-| E7-T2 | Write `loader.py`: HuggingFace safetensors state dict mapping | ⚪ |
-| E7-T3 | Write `lora.py`: Custom Low-Rank Adaptation injection | ⚪ |
-| E7-T4 | Write `train.py`: The PyTorch training loop | ⚪ |
-| E7-T5 | Write `export.py`: Merge adapters and compile to GGUF | ⚪ |
-| E7-T6 | Orchestrate dynamic loading in Spring Boot | ⚪ |
+| E7-T1 | Write `model.py`: Pure PyTorch Llama-3 architecture | ✅ |
+| E7-T2 | Write `loader.py`: HuggingFace safetensors state dict mapping | ✅ |
+| E7-T3 | Write `lora.py`: Custom Low-Rank Adaptation injection | ✅ |
+| E7-T4 | Write `train.py`: The PyTorch training loop | ✅ |
+| E7-T5 | Write `export.py`: Merge adapters and compile to GGUF | ✅ |
+| E7-T6 | Orchestrate dynamic loading in Spring Boot | ✅ |
 
 ---
 
@@ -148,7 +176,7 @@
 | Epic | Title | Proposed | Approved |
 |------|-------|---------|----------|
 | 3 | The Agent Swarm | Session 0 | ✅ Active |
-| 4 | Observability | Session 0 | Pending |
-| 5 | Agentic Tools (Safe) | Session 0 | Pending |
-| 6 | Security Hardening | Session 0 | Pending |
+| 4 | The RAG Pipeline | Session 0 | ✅ Active |
+| 5 | Agentic Tools (Safe) | Session 0 | ✅ Active |
+| 6 | Security Hardening | Session 0 | ✅ Active |
 | 7 | The LoRA Swarm | Session 3 | Pending |
